@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Sistema de Usuarios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .card {
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: #dc2626;
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            color: #059669;
+            background-color: #d1fae5;
+            border-left: 4px solid #059669;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .info {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #1e40af;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Iniciar Sesión</h1>
+    <p class="subtitle">Accede a tu cuenta</p>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="user">Nombre de usuario</label>
+            <input type="text" id="user" name="user" placeholder="ej: admin" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="loginBtn">Entrar</button>
+
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <p class="link">
+            ¿No tienes cuenta? <a href="register.html">Crea una aquí</a>
+        </p>
+
+        <div class="info">
+            👤 Usuarios: <strong>admin</strong>, <strong>juan</strong>, <strong>jose</strong>
+        </div>
+    </form>
+</div>
+
+<script>
+    const API_BASE = "http://localhost:8080";
+    const form = document.getElementById("loginForm");
+    const errorDiv = document.getElementById("error");
+    const successDiv = document.getElementById("success");
+    const loginBtn = document.getElementById("loginBtn");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorDiv.classList.remove("show");
+        successDiv.classList.remove("show");
+        loginBtn.disabled = true;
+
+        const user = document.getElementById("user").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!user) {
+            mostrarError("Debes introducir un usuario.");
+            loginBtn.disabled = false;
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/usuarios/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nombre: "admin", password: "admin123" })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                mostrarError(data.error || "Error en el login. Usuario no encontrado.");
+                loginBtn.disabled = false;
+                return;
+            }
+
+            const token = data.token;
+
+            if (!token) {
+                mostrarError("No se recibió token.");
+                loginBtn.disabled = false;
+                return;
+            }
+
+            sessionStorage.setItem("jwt", token);
+            sessionStorage.setItem("usuario", user);
+
+            mostrarExito("Login exitoso. Redirigiendo...");
+            setTimeout(() => {
+                window.location.href = "perfil.html";
+            }, 800);
+
+        } catch (err) {
+            mostrarError("Error de conexión: " + err.message);
+            loginBtn.disabled = false;
+        }
+    });
+
+    function mostrarError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.classList.add("show");
+    }
+
+    function mostrarExito(msg) {
+        successDiv.textContent = msg;
+        successDiv.classList.add("show");
+    }
+</script>
+</body>
+</html>
