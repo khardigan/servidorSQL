@@ -197,6 +197,10 @@ public class serviceAuthen {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return u == null ? new ArrayList<>() : u.getListaProductosSubidos();
     }
+     public List<? extends Object> obtenerListasSubidosPorUsuario(Long id) {
+        Usuario u = repoUsuario.findById(id).orElse(null);
+        return u == null ? new ArrayList<>() : u.getListasCompartidas();
+    }
 
     public String verUsuarios(String nombreUsuario) {
         return repoUsuario.findAll().stream()

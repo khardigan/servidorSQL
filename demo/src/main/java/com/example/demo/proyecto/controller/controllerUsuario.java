@@ -1,7 +1,6 @@
 package com.example.demo.proyecto.controller;
 
 import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -188,5 +187,12 @@ public class controllerUsuario {
         return ResponseEntity.ok(serviceAuthen.obtenerProductosSubidosPorUsuario(id));
     }
     
+    
+    @GetMapping("/{id}/listas")
+    public ResponseEntity<?> obtenerListasDelUsuario(@PathVariable Long id) {
+        UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
+        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        return ResponseEntity.ok(serviceAuthen.obtenerListasSubidosPorUsuario(id));
+    }
     
 }
