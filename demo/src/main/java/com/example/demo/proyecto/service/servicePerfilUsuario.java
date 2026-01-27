@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.proyecto.dto.CrearPerfilRequestDTO;
 import com.example.demo.proyecto.dto.PerfilUsuarioDTO;
 import com.example.demo.proyecto.model.PerfilUsario;
 import com.example.demo.proyecto.model.Usuario;
@@ -44,7 +45,7 @@ public class servicePerfilUsuario {
 
     // ---------------- GUARDAR ----------------
     @Transactional
-    public PerfilUsuarioDTO guardarPerfil(PerfilUsuarioDTO dto) {
+    public PerfilUsuarioDTO guardarPerfil(CrearPerfilRequestDTO dto) {
         PerfilUsario perfil = new PerfilUsario();
         perfil.setNombrePerfil(dto.getNombrePerfil());
         perfil.setDescripcion(dto.getDescripcion());
@@ -54,18 +55,18 @@ public class servicePerfilUsuario {
     }
 
     // ---------------- ACTUALIZAR ----------------
-    @Transactional
-    public PerfilUsuarioDTO actualizarPerfil(Integer id, PerfilUsuarioDTO dto) {
+   @Transactional
+    public PerfilUsuarioDTO actualizarPerfil(Integer id, CrearPerfilRequestDTO dtoRequest) {
         PerfilUsario perfil = repoPerfil.findById(id).orElse(null);
         if (perfil == null) return null;
 
-        // NO se actualiza el ID
-        if (dto.getDescripcion() != null) perfil.setDescripcion(dto.getDescripcion());
-        if (dto.getNombrePerfil() != null) perfil.setNombrePerfil(dto.getNombrePerfil());
+        if (dtoRequest.getDescripcion() != null) perfil.setDescripcion(dtoRequest.getDescripcion());
+        if (dtoRequest.getNombrePerfil() != null) perfil.setNombrePerfil(dtoRequest.getNombrePerfil());
 
         PerfilUsario actualizado = repoPerfil.save(perfil);
         return convertirADTO(actualizado);
     }
+
 
     // ---------------- ELIMINAR ----------------
     @Transactional          

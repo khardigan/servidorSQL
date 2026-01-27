@@ -1,27 +1,27 @@
 package com.example.demo.proyecto.dto;
 
 import java.time.LocalDate;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 
-public class CrearUsuarioDTO {
+public class CrearUsuarioRequestDTO {
 
-    @NotBlank(message = "El nombre de usuario no puede ser nulo")
+    @NotBlank(message = "El nombre de usuario no puede estar vacío")
     private String nombre;
 
-    @NotBlank(message = "El email no puede ser nulo")
+    @NotBlank(message = "El email no puede estar vacío")
     private String email;
 
-    @NotBlank(message = "La contraseña no puede ser nula")
+    @NotBlank(message = "La contraseña no puede estar vacía")
     private String contraseña;
 
-    @NotBlank(message = "El rol no puede ser nulo")
+    @NotBlank(message = "El rol no puede estar vacío")
     private String rol;
 
     @PastOrPresent(message = "La fecha de registro no puede ser futura")
-    private LocalDate fechaRegistro; 
+    private LocalDate fechaRegistro;
 
+    // Getters y Setters
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public String getEmail() { return email; }

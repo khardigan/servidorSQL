@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.AuthResponse;
-import com.example.demo.proyecto.dto.CrearUsuarioDTO;
+import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.service.serviceAuthen;
@@ -97,7 +97,7 @@ public class controllerUsuario {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o sin ID");
         }
 
-        Long tokenId = Long.valueOf(idClaim); // ahora es seguro
+        Long tokenId = idClaim; 
         String rol = serviceJWT.obtenerRol(token);
 
         if(!rol.equals("ADMIN") && !tokenId.equals(id)){
@@ -114,15 +114,14 @@ public class controllerUsuario {
 
     // ----------------- REGISTRO PÚBLICO -----------------
     @PostMapping("/registrar")
-    public ResponseEntity<AuthResponse> registrarPublico(@Valid @RequestBody CrearUsuarioDTO dto) {
+    public ResponseEntity<AuthResponse> registrarPublico(@Valid @RequestBody CrearUsuarioRequestDTO dto) {
         AuthResponse authResponse = serviceAuthen.crearUsuarioDesdeDTO(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
 
     // ----------------- ACTUALIZAR USUARIO -----------------
-    @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos, 
-                                        @RequestHeader("Authorization") String authHeader) {
+    @PutMapping("actualizar/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos, @RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
         if (token == null || !serviceJWT.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
@@ -163,7 +162,7 @@ public class controllerUsuario {
     
     
     // ----------------- ELIMINAR TODOS LOS USUARIOS -----------------
-    @DeleteMapping("/todos")
+    @DeleteMapping("/eliminartodos")
     public ResponseEntity<?> eliminarTodos(@RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
         if (token == null || !serviceJWT.esTokenValido(token)) {

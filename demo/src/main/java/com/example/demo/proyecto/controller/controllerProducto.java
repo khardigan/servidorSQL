@@ -1,27 +1,20 @@
 package com.example.demo.proyecto.controller;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
+import com.example.demo.proyecto.dto.ProductoRequestDTO;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryUsuario;
 import com.example.demo.proyecto.service.serviceJWT;
 import com.example.demo.proyecto.service.serviceProducto;
+
+import jakarta.validation.Valid;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -38,6 +31,7 @@ public class controllerProducto {
         this.jwtService = jwtService;
     }
 
+    //---------------- Listar --------------
     @GetMapping
     public ResponseEntity<List<ProductoDTO>> listar() {
         return ResponseEntity.ok(service.listarProductosDTO());
@@ -50,84 +44,119 @@ public class controllerProducto {
         return ResponseEntity.ok(p);
     }
 
-    @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Map<String, Object> payload, @RequestHeader("Authorization") String authHeader) {
+    // ---------------- Crear temporal ----------------
+    @PostMapping("/pending")
+    public ResponseEntity<?> crearProductoTemporal(
+            @Valid @RequestBody ProductoRequestDTO dtoRequest,
+            @RequestHeader("Authorization") String authHeader) {
+
         String token = extraerToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario u = encontrarUsuarioPorNombre(nombreUsuario);
-        if (u == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
-        ProductoDTO dto = new ProductoDTO();
-        try {
-            dto.setNombre(payload.get("nombre") != null ? payload.get("nombre").toString() : null);
-            dto.setDescripcion(payload.get("descripcion") != null ? payload.get("descripcion").toString() : null);
-            dto.setPrecio(payload.get("precio") != null ? Double.valueOf(payload.get("precio").toString()) : null);
-            dto.setCantidad(payload.get("cantidad") != null ? ((Number) payload.get("cantidad")).intValue() : null);
-            dto.setUsuarioRegistradorId(u.getId());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Datos de producto inválidos: " + e.getMessage());
-        }
+        Usuario usuario = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
+        if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.guardarProducto(dto));
+        ProductoDTO temp = service.guardarProductoTemporal(dtoRequest, usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(temp);
     }
 
-   @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> payload, @RequestHeader("Authorization") String authHeader) {
+    // ---------------- Confirmar producto ----------------
+    @PostMapping("/confirm/{tempId}")
+    public ResponseEntity<?> confirmarProducto(
+            @PathVariable Long tempId,
+            @RequestHeader("Authorization") String authHeader) {
+
         String token = extraerToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario u = encontrarUsuarioPorNombre(nombreUsuario);
-        if (u == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
-
-        ProductoDTO existente = service.obtenerProductoDTO(id);
-        if (existente == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        Usuario admin = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
+        if (admin == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         try {
-            if (payload.get("nombre") != null) existente.setNombre(payload.get("nombre").toString());
-            if (payload.get("descripcion") != null) existente.setDescripcion(payload.get("descripcion").toString());
-            if (payload.get("precio") != null) existente.setPrecio(Double.valueOf(payload.get("precio").toString()));
-            if (payload.get("cantidad") != null) existente.setCantidad(((Number) payload.get("cantidad")).intValue());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Datos de producto inválidos: " + e.getMessage());
+            ProductoDTO confirmado = service.confirmarProducto(tempId, admin);
+            return ResponseEntity.ok(confirmado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    // ---------------- Rechazar producto ----------------
+    @DeleteMapping("/reject/{tempId}")
+    public ResponseEntity<?> rechazarProducto(
+            @PathVariable Long tempId,
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = extraerToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        existente.setUsuarioRegistradorId(u.getId());
-        ProductoDTO actualizado = service.actualizarProducto(id, existente);
-        if (actualizado == null) 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        Usuario admin = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
+        if (admin == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+
+        try {
+            boolean ok = service.rechazarProducto(tempId, admin);
+            return ok ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    // ---------------- Actualizar ----------------
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarProducto(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductoRequestDTO dtoRequest,
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = extraerToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+        }
+
+        Usuario usuario = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
+        if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+
+        ProductoDTO actualizado = service.actualizarProducto(id, dtoRequest, usuario);
+        if (actualizado == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+
         return ResponseEntity.ok(actualizado);
     }
 
-
+    // ---------------- Eliminar ----------------
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> eliminarProducto(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+
         String token = extraerToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
         String rol = jwtService.obtenerRol(token);
-        ProductoDTO p = service.obtenerProductoDTO(id);
-        if (p == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        ProductoDTO producto = service.obtenerProductoDTO(id);
+        if (producto == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
 
         if (!rol.equals("ADMIN")) {
             String nombreUsuario = jwtService.obtenerSubject(token);
-            if (p.getUsuarioRegistradorId() == null || !p.getUsuarioRegistradorId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
+            if (producto.getUsuarioRegistradorId() == null ||
+                !producto.getUsuarioRegistradorId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el dueño o admin pueden eliminar este producto");
             }
         }
 
-        boolean ok = service.eliminarProducto(id);
+        boolean ok = service.eliminarProducto(producto.getId());
         if (!ok) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+
         return ResponseEntity.noContent().build();
     }
 
+    //--------------- Listas del producto ----------
     @GetMapping("/{id}/listas")
     public ResponseEntity<?> obtenerListasDelProducto(@PathVariable Long id) {
         ProductoDTO p = service.obtenerProductoDTO(id);
@@ -135,6 +164,7 @@ public class controllerProducto {
         return ResponseEntity.ok(p.getListas());
     }
 
+    // ----------- Funciones extra -------------
     private String extraerToken(String authHeader) {
         if (authHeader == null) return null;
         authHeader = authHeader.trim();
@@ -144,7 +174,9 @@ public class controllerProducto {
 
     private Usuario encontrarUsuarioPorNombre(String nombre) {
         if (nombre == null) return null;
-        Optional<Usuario> opt = repoUsuario.findAll().stream().filter(u -> nombre.equals(u.getNombre())).findFirst();
+        Optional<Usuario> opt = repoUsuario.findAll().stream()
+                .filter(u -> nombre.equals(u.getNombre()))
+                .findFirst();
         return opt.orElse(null);
     }
 }

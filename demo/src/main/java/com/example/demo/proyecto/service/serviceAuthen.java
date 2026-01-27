@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.proyecto.dto.AuthResponse;
-import com.example.demo.proyecto.dto.CrearUsuarioDTO;
+import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
 import com.example.demo.proyecto.model.PerfilUsario;
 import com.example.demo.proyecto.model.Producto;
@@ -37,7 +37,7 @@ public class serviceAuthen {
     private final Map<String, String> roles = Map.of(
         "admin", "ADMIN",
         "juan", "USER",
-        "jose", "USER"
+        "jose", "DISTRIBUTOR"
     );
 
     @PostConstruct
@@ -141,8 +141,8 @@ public class serviceAuthen {
         return repoUsuario.save(usuario);
     }
     //Aqui cogemos y creamos a partir del json un usuario dto y luego lo pasamos a usuario origina
-  @Transactional
-    public AuthResponse crearUsuarioDesdeDTO(CrearUsuarioDTO dto) {
+    @Transactional
+    public AuthResponse crearUsuarioDesdeDTO(CrearUsuarioRequestDTO dto) {
         // Validación de duplicados
         boolean existe = repoUsuario.findAll().stream()
                 .anyMatch(u -> u.getNombre() != null && u.getNombre().equals(dto.getNombre()));
@@ -218,6 +218,7 @@ public class serviceAuthen {
         String token = jwtService.generarToken(nombre, rol, id);
         return AuthResponse.builder().token(token).build();
     }
+
     // ----------------- Conversión a DTO -----------------
    public UsuarioDTO convertirAUsuarioDTO(Usuario u) {
     if (u == null) return null;

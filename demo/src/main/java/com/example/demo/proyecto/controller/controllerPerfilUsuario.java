@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.proyecto.dto.CrearPerfilRequestDTO;
 import com.example.demo.proyecto.dto.PerfilUsuarioDTO;
 import com.example.demo.proyecto.model.PerfilUsario;
 import com.example.demo.proyecto.model.Usuario;
@@ -36,7 +37,7 @@ public class controllerPerfilUsuario {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(@Valid @RequestBody PerfilUsuarioDTO perfilDTO) {
+    public ResponseEntity<?> crear(@Valid @RequestBody CrearPerfilRequestDTO perfilDTO) {
         try {
             PerfilUsuarioDTO creado = service.guardarPerfil(perfilDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(creado);
@@ -46,7 +47,7 @@ public class controllerPerfilUsuario {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @Valid @RequestBody PerfilUsuarioDTO datos) {
+    public ResponseEntity<?> actualizar(@PathVariable Integer id, @Valid @RequestBody CrearPerfilRequestDTO datos) {
         PerfilUsuarioDTO actualizado = service.actualizarPerfil(id, datos);
         if (actualizado == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
         return ResponseEntity.ok(actualizado);

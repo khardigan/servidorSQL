@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.proyecto.dto.CrearListaRequestDTO;
 import com.example.demo.proyecto.dto.ListaDTO;
 import com.example.demo.proyecto.model.Lista;
 import com.example.demo.proyecto.model.Producto;
@@ -15,7 +16,6 @@ import com.example.demo.proyecto.repository.repositoryProducto;
 import com.example.demo.proyecto.repository.repositoryUsuario;
 
 import jakarta.transaction.Transactional;
-
 @Service
 public class serviceLista {
 
@@ -46,33 +46,20 @@ public class serviceLista {
 
     // ---------------- GUARDAR ----------------
     @Transactional
-    public ListaDTO guardarLista(ListaDTO dto) {
+    public ListaDTO guardarLista(CrearListaRequestDTO request, Usuario usuarioDueno) {
         Lista lista = new Lista();
-        lista.setCodLista(dto.getCodLista());
+        lista.setUsuarioDueno(usuarioDueno);
 
-        // Usuario dueño
-        if (dto.getUsuarioDuenoId() != null) {
-            Usuario u = repoUsuario.findById(dto.getUsuarioDuenoId()).orElse(null);
-            lista.setUsuarioDueno(u);
-        }
-
-        // Productos
-        if (dto.getProductosEnLista() != null) {
-            List<Producto> productos = new ArrayList<>();
-            for (Long idProd : dto.getProductosEnLista()) {
-                Producto p = repoProducto.findById(idProd).orElse(null);
-                if (p != null) productos.add(p);
-            }
+        if (request.getProductosEnLista() != null) {
+            List<Producto> productos = request.getProductosEnLista().stream()
+                .map(idProd -> repoProducto.findById(idProd).orElse(null))
+                .filter(p -> p != null).toList();
             lista.setProductosEnLista(productos);
         }
-
-        // Usuarios compartidos
-        if (dto.getUsuariosCompartida() != null) {
-            List<Usuario> usuarios = new ArrayList<>();
-            for (Long idUsuario : dto.getUsuariosCompartida()) {
-                Usuario u = repoUsuario.findById(idUsuario).orElse(null);
-                if (u != null) usuarios.add(u);
-            }
+        if (request.getUsuariosCompartida() != null) {
+            List<Usuario> usuarios = request.getUsuariosCompartida().stream()
+                .map(idU -> repoUsuario.findById(idU).orElse(null))
+                .filter(u -> u != null).toList();
             lista.setUsuariosCompartida(usuarios);
         }
 
@@ -82,27 +69,21 @@ public class serviceLista {
 
     // ---------------- ACTUALIZAR ----------------
     @Transactional
-    public ListaDTO actualizarLista(Long id, ListaDTO dto) {
+    public ListaDTO actualizarLista(Long id, CrearListaRequestDTO request) {
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null) return null;
 
-        // Actualizar productos si vienen en DTO
-        if (dto.getProductosEnLista() != null) {
-            List<Producto> productos = new ArrayList<>();
-            for (Long idProd : dto.getProductosEnLista()) {
-                Producto p = repoProducto.findById(idProd).orElse(null);
-                if (p != null) productos.add(p);
-            }
+        if (request.getProductosEnLista() != null) {
+            List<Producto> productos = request.getProductosEnLista().stream()
+                .map(idProd -> repoProducto.findById(idProd).orElse(null))
+                .filter(p -> p != null).toList();
             lista.setProductosEnLista(productos);
         }
 
-        // Actualizar usuarios compartidos
-        if (dto.getUsuariosCompartida() != null) {
-            List<Usuario> usuarios = new ArrayList<>();
-            for (Long idUsuario : dto.getUsuariosCompartida()) {
-                Usuario u = repoUsuario.findById(idUsuario).orElse(null);
-                if (u != null) usuarios.add(u);
-            }
+        if (request.getUsuariosCompartida() != null) {
+            List<Usuario> usuarios = request.getUsuariosCompartida().stream()
+                .map(idU -> repoUsuario.findById(idU).orElse(null))
+                .filter(u -> u != null).toList();
             lista.setUsuariosCompartida(usuarios);
         }
 

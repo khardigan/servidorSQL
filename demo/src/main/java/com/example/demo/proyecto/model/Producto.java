@@ -57,6 +57,10 @@ public class Producto {
     @ManyToMany(mappedBy = "productosEnLista")
     private List<Lista> listas;
 
+    public void setConfirmado(boolean b) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }
 
 
