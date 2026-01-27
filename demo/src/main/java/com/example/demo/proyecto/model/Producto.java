@@ -48,6 +48,7 @@ public class Producto {
     private Double precio;
     @Range(min=1,max=1000,message="Debes comprar minimo 1 y maximo 100 por cada compra")
     private int cantidad;
+    private boolean confirmado;
 
     @ManyToOne
     @JoinColumn(name="usuario_id")
@@ -57,10 +58,9 @@ public class Producto {
     @ManyToMany(mappedBy = "productosEnLista")
     private List<Lista> listas;
 
-    public void setConfirmado(boolean b) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void setConfirmado(boolean confirmado) {
+        this.confirmado = confirmado;
     }
-
 }
 
 
