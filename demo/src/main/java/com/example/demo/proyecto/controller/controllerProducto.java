@@ -5,7 +5,16 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
 import com.example.demo.proyecto.dto.ProductoRequestDTO;
@@ -50,17 +59,23 @@ public class controllerProducto {
             @Valid @RequestBody ProductoRequestDTO dtoRequest,
             @RequestHeader("Authorization") String authHeader) {
 
+        System.out.println("authHeader recibido: " + authHeader);
         String token = extraerToken(authHeader);
-        if (token == null || !jwtService.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
-        }
+        System.out.println("Token extraído: " + token);
 
-        Usuario usuario = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
+        boolean valido = jwtService.esTokenValido(token);
+        System.out.println("¿Token válido? " + valido);
+
+        String subject = jwtService.obtenerSubject(token);
+        System.out.println("Subject: " + subject);
+
+        Usuario usuario = encontrarUsuarioPorNombre(subject);
         if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         ProductoDTO temp = service.guardarProductoTemporal(dtoRequest, usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(temp);
     }
+
 
     // ---------------- Confirmar producto ----------------
     @PostMapping("/confirm/{tempId}")
@@ -163,14 +178,16 @@ public class controllerProducto {
         if (p == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
         return ResponseEntity.ok(p.getListas());
     }
-
-    // ----------- Funciones extra -------------
     private String extraerToken(String authHeader) {
         if (authHeader == null) return null;
         authHeader = authHeader.trim();
-        if (authHeader.toLowerCase().startsWith("bearer ")) return authHeader.substring(7).trim();
-        return authHeader;
+        if (authHeader.toLowerCase().startsWith("bearer ")) {
+            return authHeader.substring(7).trim();
+        }
+        // Si no empieza con Bearer, devolvemos null
+        return null;
     }
+
 
     private Usuario encontrarUsuarioPorNombre(String nombre) {
         if (nombre == null) return null;
