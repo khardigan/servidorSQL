@@ -98,15 +98,14 @@ public class serviceAuthen {
                 .filter(u -> u.getNombre().equalsIgnoreCase(nombre))
                 .findFirst()
                 .orElse(null);
-
+        System.out.println(passwordEncoder.matches(password, usuario.getContraseña()));
         if (usuario == null || !passwordEncoder.matches(password, usuario.getContraseña())) {
             return null;
         }
 
         //Pasa el id del usuario al token
         String token = jwtService.generarToken(nombre, usuario.getRol(), usuario.getId());
-
-        return AuthResponse.builder().token(token).build();
+        return AuthResponse.builder().token(token).nombre(nombre).rol(usuario.getRol()).build();
     }
 
     public UsuarioDTO obtenerUsuarioDTO(Long id) {
@@ -170,7 +169,7 @@ public class serviceAuthen {
         repoUsuario.save(usuario); // Guardamos el usuario primero
 
         String token = jwtService.generarToken(usuario.getNombre(), usuario.getRol(), usuario.getId());
-        return AuthResponse.builder().token(token).build();
+        return AuthResponse.builder().token(token).nombre(usuario.getNombre()).rol(usuario.getRol()).build();
     }
 
 
@@ -216,7 +215,7 @@ public class serviceAuthen {
 
     public AuthResponse renovarToken(String nombre, String rol, Long id) {
         String token = jwtService.generarToken(nombre, rol, id);
-        return AuthResponse.builder().token(token).build();
+        return AuthResponse.builder().token(token).nombre(nombre).rol(rol).build();
     }
 
     // ----------------- Conversión a DTO -----------------

@@ -1,4 +1,4 @@
-package com.example.demo.proyecto.service;
+package com.example.demo.test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -10,14 +10,29 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.TestPropertySource;
 
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryLista;
 import com.example.demo.proyecto.repository.repositoryProducto;
 import com.example.demo.proyecto.repository.repositoryUsuario;
+import com.example.demo.proyecto.service.serviceJWT;
+import com.example.demo.proyecto.service.serviceAuthen;
 
+
+
+@SpringBootTest
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.datasource.driverClassName=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 @ExtendWith(MockitoExtension.class)
+
 class ServiceAuthenTest {
 
     @Mock
