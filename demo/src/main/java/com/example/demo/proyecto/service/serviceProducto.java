@@ -10,7 +10,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
-import com.example.demo.proyecto.dto.ProductoRequestDTO;
+import com.example.demo.proyecto.dto.CrearProductoDTO;
 import com.example.demo.proyecto.model.Lista;
 import com.example.demo.proyecto.model.Producto;
 import com.example.demo.proyecto.model.Usuario;
@@ -107,7 +107,7 @@ public class serviceProducto {
     }
 
     // ---------------- Guardar ----------------
-    public ProductoDTO guardarProductoTemporal(ProductoRequestDTO dto, Usuario usuario) {
+    public ProductoDTO guardarProductoTemporal(CrearProductoDTO dto, Usuario usuario) {
         Producto producto = new Producto();
         producto.setNombre(dto.getNombre());
         producto.setDescripcion(dto.getDescripcion());
@@ -156,7 +156,7 @@ public class serviceProducto {
     // ---------------- Actualizar ----------------
 
     @Transactional
-    public ProductoDTO actualizarProducto(Long id, ProductoRequestDTO dto, Usuario usuario) {
+    public ProductoDTO actualizarProducto(Long id, CrearProductoDTO dto, Usuario usuario) {
         Producto producto = repoProducto.findById(id).orElse(null);
         if (producto == null) return null;
 

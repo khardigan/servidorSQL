@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Positive;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
-public class ProductoRequestDTO {
+public class CrearProductoDTO {
 
     @NotBlank(message = "El nombre no puede estar vacío")
     @Length(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
@@ -55,6 +55,7 @@ public class ProductoRequestDTO {
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
     }
+    
 
 
 

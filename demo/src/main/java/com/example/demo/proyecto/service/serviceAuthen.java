@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,13 +27,13 @@ import jakarta.transaction.Transactional;
 public class serviceAuthen {
 
     private final serviceJWT jwtService;
-    private final repositoryUsuario repoUsuario;
     private final repositoryProducto repoProducto;
     private final repositoryLista repoLista;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private repositoryUsuario repoUsuario;
 
-
-
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     // Usuarios → rol 
     private final Map<String, String> roles = Map.of(
         "admin", "ADMIN",
@@ -118,12 +119,15 @@ public class serviceAuthen {
             boolean existe = repoUsuario.findAll().stream()
                     .anyMatch(u -> u.getNombre() != null && u.getNombre().equals(usuario.getNombre()));
             if (existe) {
-                throw new com.example.demo.proyecto.exception.RecursoDuplicadoException("Usuario ya existe en la base de datos");
+                throw new com.example.demo.proyecto.exception.RecursoDuplicadoException("Usuario ya existe");
             }
         }
 
-        
-        // Inicializar objetos y listas vacías si vienen null
+        if (usuario.getContraseña() != null) {
+            String passwordCifrada = passwordEncoder.encode(usuario.getContraseña());
+            usuario.setContraseña(passwordCifrada);
+        }
+
         if (usuario.getPerfilUsuario() == null) {
             usuario.setPerfilUsuario(new PerfilUsario());
         }
@@ -136,9 +140,10 @@ public class serviceAuthen {
         if (usuario.getListasCompartidas() == null) {
             usuario.setListasCompartidas(new ArrayList<>());
         }
-
         return repoUsuario.save(usuario);
     }
+    
+
     //Aqui cogemos y creamos a partir del json un usuario dto y luego lo pasamos a usuario origina
     @Transactional
     public AuthResponse crearUsuarioDesdeDTO(CrearUsuarioRequestDTO dto) {

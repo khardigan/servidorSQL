@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
-import com.example.demo.proyecto.dto.ProductoRequestDTO;
+import com.example.demo.proyecto.dto.CrearProductoDTO;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryUsuario;
 import com.example.demo.proyecto.service.serviceJWT;
@@ -56,7 +56,7 @@ public class controllerProducto {
     // ---------------- Crear temporal ----------------
     @PostMapping("/pending")
     public ResponseEntity<?> crearProductoTemporal(
-            @Valid @RequestBody ProductoRequestDTO dtoRequest,
+            @Valid @RequestBody CrearProductoDTO dtoRequest,
             @RequestHeader("Authorization") String authHeader) {
 
         System.out.println("authHeader recibido: " + authHeader);
@@ -125,7 +125,7 @@ public class controllerProducto {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarProducto(
             @PathVariable Long id,
-            @Valid @RequestBody ProductoRequestDTO dtoRequest,
+            @Valid @RequestBody CrearProductoDTO dtoRequest,
             @RequestHeader("Authorization") String authHeader) {
 
         String token = extraerToken(authHeader);

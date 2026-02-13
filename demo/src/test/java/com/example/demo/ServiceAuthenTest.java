@@ -1,6 +1,9 @@
-package com.example.demo.test;
+package com.example.demo;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
@@ -10,10 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.TestPropertySource;
-
+import com.example.demo.proyecto.exception.RecursoDuplicadoException;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryLista;
 import com.example.demo.proyecto.repository.repositoryProducto;
@@ -22,18 +23,9 @@ import com.example.demo.proyecto.service.serviceJWT;
 import com.example.demo.proyecto.service.serviceAuthen;
 
 
-
-@SpringBootTest
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.datasource.driverClassName=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
-})
 @ExtendWith(MockitoExtension.class)
 
-class ServiceAuthenTest {
+public class ServiceAuthenTest {
 
     @Mock
     private repositoryUsuario repoUsuario;
@@ -48,11 +40,10 @@ class ServiceAuthenTest {
 
     @InjectMocks
     private serviceAuthen serviceAuthen; 
-    //hola
+
 
     @Test
     void guardarUsuario_ok_cuandoNoExiste() {
-        // ARRANGE
         Usuario usuario = new Usuario(
                 "pepe",
                 "pepe@email.com",
@@ -66,7 +57,6 @@ class ServiceAuthenTest {
 
         Usuario resultado = serviceAuthen.guardarUsuario(usuario);
 
-        // ASSERT
         assertNotNull(resultado);
         assertEquals("pepe", resultado.getNombre());
         assertNotNull(resultado.getPerfilUsuario());
@@ -86,10 +76,27 @@ class ServiceAuthenTest {
         when(repoUsuario.findAll()).thenReturn(List.of(existente)); 
 
         assertThrows(
-            com.example.demo.proyecto.exception.RecursoDuplicadoException.class,
+            RecursoDuplicadoException.class, 
             () -> serviceAuthen.guardarUsuario(usuario)
         );
 
         verify(repoUsuario, never()).save(any());
+    }
+
+
+    @Test
+    public void guardarUsuario_debeCifrarPassword() {
+        Usuario usuario = new Usuario("ana", "ana@mail.com", "password123", "USER", LocalDate.now());
+        when(repoUsuario.findAll()).thenReturn(List.of()); 
+        when(passwordEncoder.encode(anyString())).thenReturn("bcrypted_password");
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        
+        when(repoUsuario.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+
+        Usuario resultado = serviceAuthen.guardarUsuario(usuario);
+
+        assertNotNull(resultado.getContraseña());
+        assertTrue(passwordEncoder.matches("password123", resultado.getContraseña()));
+        verify(passwordEncoder).encode("password123"); 
     }
 }
