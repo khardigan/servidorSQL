@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.AuthResponse;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
+import com.example.demo.proyecto.dto.PerfilUsuarioDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.service.serviceAuthen;
 import com.example.demo.proyecto.service.serviceJWT;
+import com.example.demo.proyecto.service.servicePerfilUsuario;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.Valid;
@@ -29,13 +31,16 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/usuarios")
 public class controllerUsuario {
-
+    private final servicePerfilUsuario servicePerfil;
     private final serviceAuthen serviceAuthen;
     private final serviceJWT serviceJWT;
 
-    public controllerUsuario(serviceAuthen serviceAuthen, serviceJWT serviceJWT) {
+    public controllerUsuario(serviceAuthen serviceAuthen,
+            serviceJWT serviceJWT,
+            servicePerfilUsuario servicePerfil) {
         this.serviceAuthen = serviceAuthen;
         this.serviceJWT = serviceJWT;
+        this.servicePerfil = servicePerfil;
     }
 
     // ----------------- LISTAR USUARIOS -----------------
@@ -69,23 +74,22 @@ public class controllerUsuario {
 
         return ResponseEntity.ok(authResponse);
     }
-    
 
     // ----------------- RENOVAR TOKEN -----------------
-    @GetMapping("/renovarJWT")
+    @GetMapping("/renovar")
     public ResponseEntity<AuthResponse> obtenerNuevoJWT(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
+        String token = serviceJWT.limpiarToken(authHeader);
         String nombre = serviceJWT.obtenerSubject(token);
         String rol = serviceJWT.obtenerRol(token);
         Long id = serviceJWT.obtenerId(token);
         AuthResponse nuevoToken = serviceAuthen.renovarToken(nombre, rol, id);
         return ResponseEntity.ok(nuevoToken);
     }
-    // ----------------- OBTENER USUARIO POR ID (ADMIN) -----------------
-  @GetMapping("id/{id}")
-    public ResponseEntity<?> obtener(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
 
+    // ----------------- OBTENER USUARIO POR ID (ADMIN) -----------------
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtener(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        String token = serviceJWT.limpiarToken(authHeader);
         Long idClaim;
         try {
             idClaim = serviceJWT.obtenerId(token); // devuelve String con el ID
@@ -93,24 +97,57 @@ public class controllerUsuario {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token expirado");
         }
 
-        if (idClaim == null ) {
+        if (idClaim == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o sin ID");
         }
 
-        Long tokenId = idClaim; 
+        Long tokenId = idClaim;
         String rol = serviceJWT.obtenerRol(token);
 
-        if(!rol.equals("ADMIN") && !tokenId.equals(id)){
+        if (!rol.equals("ADMIN") && !tokenId.equals(id)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body("No tienes permisos para ver este usuario");
+                    .body("No tienes permisos para ver este usuario");
         }
 
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (u == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.ok(u);
     }
 
+    // --------- Mirar Perfil --------------------
+    @GetMapping("/{id}/perfil")
+    public ResponseEntity<?> obtenerPerfilDelUsuario(@PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
 
+        String token = validarToken(authHeader);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token inválido o ausente");
+        }
+
+        String rol = serviceJWT.obtenerRol(token);
+        Long idToken = serviceJWT.obtenerId(token);
+
+        if (!rol.equals("ADMIN") && !idToken.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No tienes permisos para ver este perfil");
+        }
+
+        UsuarioDTO usuario = serviceAuthen.obtenerUsuarioDTO(id);
+        if (usuario == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Usuario no encontrado");
+        }
+
+        PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilDTO(id.intValue());
+        if (perfil == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Perfil no encontrado");
+        }
+
+        return ResponseEntity.ok(perfil);
+    }
 
     // ----------------- REGISTRO PÚBLICO -----------------
     @PostMapping("/registrar")
@@ -121,17 +158,21 @@ public class controllerUsuario {
 
     // ----------------- ACTUALIZAR USUARIO -----------------
     @PutMapping("actualizar/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos, @RequestHeader("Authorization") String authHeader) {
-        String token = serviceJWT.limpiarToken(authHeader);
-        if (token == null || !serviceJWT.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos,
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = validarToken(authHeader);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token inválido o ausente");
         }
 
         String rol = serviceJWT.obtenerRol(token);
         String nombreUsuario = serviceJWT.obtenerSubject(token);
 
         UsuarioDTO existente = serviceAuthen.obtenerUsuarioDTO(id);
-        if (existente == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (existente == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
 
         if (!rol.equals("ADMIN") && !existente.getNombre().equals(nombreUsuario)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -146,9 +187,12 @@ public class controllerUsuario {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
+
         if (token == null || !serviceJWT.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token inválido o ausente");
         }
+
         String rol = serviceJWT.obtenerRol(token);
 
         if (!rol.equals("ADMIN")) {
@@ -156,42 +200,53 @@ public class controllerUsuario {
         }
 
         boolean ok = serviceAuthen.eliminarUsuario(id);
-        if (!ok) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (!ok)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.noContent().build();
     }
-    
-    
+
     // ----------------- ELIMINAR TODOS LOS USUARIOS -----------------
     @DeleteMapping("/eliminartodos")
     public ResponseEntity<?> eliminarTodos(@RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
+
         if (token == null || !serviceJWT.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token inválido o ausente");
         }
-    
+
         String rol = serviceJWT.obtenerRol(token);
         if (!rol.equals("ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
         }
-        
+
         serviceAuthen.eliminarTodosUsuarios();
         return ResponseEntity.noContent().build();
     }
-    
+
     // ----------------- PRODUCTOS DEL USUARIO -----------------
     @GetMapping("/{id}/productos")
     public ResponseEntity<?> obtenerProductosDelUsuario(@PathVariable Long id) {
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (u == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.ok(serviceAuthen.obtenerProductosSubidosPorUsuario(id));
     }
-    
-    
+
     @GetMapping("/{id}/listas")
     public ResponseEntity<?> obtenerListasDelUsuario(@PathVariable Long id) {
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (u == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.ok(serviceAuthen.obtenerListasSubidosPorUsuario(id));
     }
-    
+
+    // --------- Validar token
+    private String validarToken(String authHeader) {
+        String token = serviceJWT.limpiarToken(authHeader);
+        if (token == null || !serviceJWT.esTokenValido(token)) {
+            return null;
+        }
+        return token;
+    }
 }

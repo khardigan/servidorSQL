@@ -55,21 +55,23 @@ public class servicePerfilUsuario {
     }
 
     // ---------------- ACTUALIZAR ----------------
-   @Transactional
+    @Transactional
     public PerfilUsuarioDTO actualizarPerfil(Integer id, CrearPerfilRequestDTO dtoRequest) {
         PerfilUsario perfil = repoPerfil.findById(id).orElse(null);
-        if (perfil == null) return null;
+        if (perfil == null)
+            return null;
 
-        if (dtoRequest.getDescripcion() != null) perfil.setDescripcion(dtoRequest.getDescripcion());
-        if (dtoRequest.getNombrePerfil() != null) perfil.setNombrePerfil(dtoRequest.getNombrePerfil());
+        if (dtoRequest.getDescripcion() != null)
+            perfil.setDescripcion(dtoRequest.getDescripcion());
+        if (dtoRequest.getNombrePerfil() != null)
+            perfil.setNombrePerfil(dtoRequest.getNombrePerfil());
 
         PerfilUsario actualizado = repoPerfil.save(perfil);
         return convertirADTO(actualizado);
     }
 
-
     // ---------------- ELIMINAR ----------------
-    @Transactional          
+    @Transactional
     public boolean eliminarPerfil(Integer id) {
         if (repoPerfil.existsById(id)) {
             repoPerfil.deleteById(id);
@@ -81,13 +83,15 @@ public class servicePerfilUsuario {
     // ---------------- USUARIO DEL PERFIL ----------------
     public Usuario obtenerUsuarioDelPerfil(Integer id) {
         PerfilUsario perfil = repoPerfil.findById(id).orElse(null);
-        if (perfil == null) return null;
+        if (perfil == null)
+            return null;
         return perfil.getUsuario(); // puede ser null
     }
 
     // ---------------- CONVERSIÓN DTO ----------------
     private PerfilUsuarioDTO convertirADTO(PerfilUsario p) {
-        if (p == null) return null;
+        if (p == null)
+            return null;
         PerfilUsuarioDTO dto = new PerfilUsuarioDTO();
         dto.setUsuarioId(p.getUsuario() != null ? p.getUsuario().getId() : null);
         dto.setNombrePerfil(p.getNombrePerfil());

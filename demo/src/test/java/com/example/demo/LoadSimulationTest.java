@@ -32,12 +32,10 @@ public class LoadSimulationTest {
         ExecutorService executor = Executors.newFixedThreadPool(numeroDeHilos);
         // Contador seguro para entornos concurrentes (evita errores entre hilos)
         AtomicInteger contadorExitos = new AtomicInteger(0);
-
         // Definimos la tarea que ejecutará cada hilo
         Runnable tarea = () -> {
             try {
-                // Simulamos una pequeña operación (como acceder a base de datos) y si termina
-                // correctamente, aumentamos el contador
+                // Simulamos una pequeña operación (como acceder a base de datos) y si termina correctamente, aumentamos el contador
                 Thread.sleep(10);
                 contadorExitos.incrementAndGet();
 
@@ -53,17 +51,13 @@ public class LoadSimulationTest {
 
         // Indicamos que no se enviarán más tareas
         executor.shutdown();
-
         // Esperamos máximo 5 segundos a que todos los hilos terminen
         boolean terminado = executor.awaitTermination(5, TimeUnit.SECONDS);
-
         // Comprobamos que todos terminaron
         assertTrue(terminado, "Todas las tareas deberían haber terminado");
-
         // Comprobamos que las 50 tareas se ejecutaron correctamente
         assertTrue(contadorExitos.get() == numeroDeHilos,
                 "Todas las tareas deberían haber sido exitosas");
-
         System.out.println("Prueba de Concurrencia: " + numeroDeHilos + " hilos ejecutados correctamente.");
     }
 
@@ -78,27 +72,20 @@ public class LoadSimulationTest {
 
         // Guardamos el tiempo antes de empezar
         long inicio = System.currentTimeMillis();
-
         // Ejecutamos la operación que queremos medir
         operacionPesadaSimulada();
-
         // Guardamos el tiempo al terminar
         long fin = System.currentTimeMillis();
-
         // Calculamos cuánto ha tardado
         long duracion = fin - inicio;
-
         System.out.println("Duración operación: " + duracion + " ms");
-
         // Verificamos que no tarde más de 500 milisegundos
         assertTrue(duracion < 500,
                 "La operación no debería tardar más de 500ms");
     }
 
-    /*
-     * Método que simula una operación pesada.
-     * Aquí simplemente hacemos que el sistema espere 100ms
-     * como si estuviera procesando algo complejo.
+    /* Método que simula una operación pesada.  Aquí simplemente hacemos que el sistema espere 100ms
+        como si estuviera procesando algo complejo.
      */
     private void operacionPesadaSimulada() {
         try {

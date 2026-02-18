@@ -34,12 +34,11 @@ public class serviceAuthen {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-    // Usuarios → rol 
+    // Usuarios → rol
     private final Map<String, String> roles = Map.of(
-        "admin", "ADMIN",
-        "juan", "USER",
-        "jose", "DISTRIBUTOR"
-    );
+            "admin", "ADMIN",
+            "juan", "USER",
+            "jose", "DISTRIBUTOR");
 
     @PostConstruct
     public void init() {
@@ -76,10 +75,10 @@ public class serviceAuthen {
         }
     }
 
-    public serviceAuthen(serviceJWT jwtService,PasswordEncoder passwordEncoder,
-                         repositoryUsuario repoUsuario,
-                         repositoryProducto repoProducto,
-                         repositoryLista repoLista) {
+    public serviceAuthen(serviceJWT jwtService, PasswordEncoder passwordEncoder,
+            repositoryUsuario repoUsuario,
+            repositoryProducto repoProducto,
+            repositoryLista repoLista) {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.repoUsuario = repoUsuario;
@@ -104,7 +103,7 @@ public class serviceAuthen {
             return null;
         }
 
-        //Pasa el id del usuario al token
+        // Pasa el id del usuario al token
         String token = jwtService.generarToken(nombre, usuario.getRol(), usuario.getId());
         return AuthResponse.builder().token(token).nombre(nombre).rol(usuario.getRol()).build();
     }
@@ -142,16 +141,17 @@ public class serviceAuthen {
         }
         return repoUsuario.save(usuario);
     }
-    
 
-    //Aqui cogemos y creamos a partir del json un usuario dto y luego lo pasamos a usuario origina
+    // Aqui cogemos y creamos a partir del json un usuario dto y luego lo pasamos a
+    // usuario origina
     @Transactional
     public AuthResponse crearUsuarioDesdeDTO(CrearUsuarioRequestDTO dto) {
         // Validación de duplicados
         boolean existe = repoUsuario.findAll().stream()
                 .anyMatch(u -> u.getNombre() != null && u.getNombre().equals(dto.getNombre()));
         if (existe) {
-            throw new com.example.demo.proyecto.exception.RecursoDuplicadoException("Usuario ya existe en la base de datos");
+            throw new com.example.demo.proyecto.exception.RecursoDuplicadoException(
+                    "Usuario ya existe en la base de datos");
         }
 
         String passwordHasheada = passwordEncoder.encode(dto.getContraseña());
@@ -177,7 +177,6 @@ public class serviceAuthen {
         return AuthResponse.builder().token(token).nombre(usuario.getNombre()).rol(usuario.getRol()).build();
     }
 
-
     public Usuario actualizarUsuario(Long id, Usuario datos) {
         datos.setId(id);
         return repoUsuario.save(datos);
@@ -192,16 +191,17 @@ public class serviceAuthen {
     }
 
     public void eliminarTodosUsuarios() {
-        repoLista.deleteAll();      // borra listas y relaciones
-        repoProducto.deleteAll();   // borra productos
-        repoUsuario.deleteAll();    // borra usuarios
+        repoLista.deleteAll(); // borra listas y relaciones
+        repoProducto.deleteAll(); // borra productos
+        repoUsuario.deleteAll(); // borra usuarios
     }
 
     public List<Producto> obtenerProductosSubidosPorUsuario(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return u == null ? new ArrayList<>() : u.getListaProductosSubidos();
     }
-     public List<? extends Object> obtenerListasSubidosPorUsuario(Long id) {
+
+    public List<? extends Object> obtenerListasSubidosPorUsuario(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return u == null ? new ArrayList<>() : u.getListasCompartidas();
     }
@@ -224,48 +224,46 @@ public class serviceAuthen {
     }
 
     // ----------------- Conversión a DTO -----------------
-   public UsuarioDTO convertirAUsuarioDTO(Usuario u) {
-    if (u == null) return null;
+    public UsuarioDTO convertirAUsuarioDTO(Usuario u) {
+        if (u == null)
+            return null;
 
-    UsuarioDTO dto = new UsuarioDTO();
-    dto.setId(u.getId());
-    dto.setNombre(u.getNombre());
-    dto.setEmail(u.getEmail()); 
-    dto.setRol(u.getRol());
-    dto.setFechaRegistro(u.getFechaRegistro() != null ? u.getFechaRegistro().toString() : null);
+        UsuarioDTO dto = new UsuarioDTO();
+        dto.setId(u.getId());
+        dto.setNombre(u.getNombre());
+        dto.setEmail(u.getEmail());
+        dto.setRol(u.getRol());
+        dto.setFechaRegistro(u.getFechaRegistro() != null ? u.getFechaRegistro().toString() : null);
 
-    dto.setListaProductosSubidos(
-        u.getListaProductosSubidos() != null
-            ? u.getListaProductosSubidos().stream()
-                .map(Producto::getId)
-                .sorted()
-                .collect(Collectors.toList())
-            : List.of()
-    );
-    int id_perfil = 0;
-    if (u.getPerfilUsuario() != null) {
-        PerfilUsario perfil = u.getPerfilUsuario();
-        id_perfil = perfil.getId();
-    }
-    dto.setIdPerfil(id_perfil);
-    dto.setListasCreadas(
-        u.getListasCreadas() != null
-            ? u.getListasCreadas().stream()
-                .map(l -> l.getCodLista())
-                .sorted() // <-- orden ascendente
-                .collect(Collectors.toList())
-            : List.of()
-    );
-    dto.setListasCompartidas(
-        u.getListasCompartidas() != null
-            ? u.getListasCompartidas().stream()
-                .map(l -> l.getCodLista())
-                .sorted() // <-- orden ascendente
-                .collect(Collectors.toList())
-            : List.of()
-    );
+        dto.setListaProductosSubidos(
+                u.getListaProductosSubidos() != null
+                        ? u.getListaProductosSubidos().stream()
+                                .map(Producto::getId)
+                                .sorted()
+                                .collect(Collectors.toList())
+                        : List.of());
+        int id_perfil = 0;
+        if (u.getPerfilUsuario() != null) {
+            PerfilUsario perfil = u.getPerfilUsuario();
+            id_perfil = perfil.getId();
+        }
+        dto.setIdPerfil(id_perfil);
+        dto.setListasCreadas(
+                u.getListasCreadas() != null
+                        ? u.getListasCreadas().stream()
+                                .map(l -> l.getCodLista())
+                                .sorted() // <-- orden ascendente
+                                .collect(Collectors.toList())
+                        : List.of());
+        dto.setListasCompartidas(
+                u.getListasCompartidas() != null
+                        ? u.getListasCompartidas().stream()
+                                .map(l -> l.getCodLista())
+                                .sorted() // <-- orden ascendente
+                                .collect(Collectors.toList())
+                        : List.of());
 
-    return dto;
+        return dto;
     }
 
 }

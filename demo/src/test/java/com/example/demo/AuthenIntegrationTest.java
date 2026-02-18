@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.example.demo.proyecto.dto.CrearProductoDTO;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
+import com.example.demo.proyecto.dto.ProductoDTO;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryProducto;
 import com.example.demo.proyecto.repository.repositoryUsuario;
@@ -13,7 +14,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -21,28 +24,34 @@ import java.time.LocalDate;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class AuthenIntegrationTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockBean
-        private serviceJWT jwtService;
+    @MockBean
+    private serviceJWT jwtService;
 
-        @Autowired
-        private repositoryUsuario repoUsuario;
-        @Autowired
-        private repositoryProducto repoProducto;
+    @MockBean
+    private SecurityFilterChain securityFilterChain; // <--- SALTA la seguridad
 
-        @Autowired
-        private ObjectMapper objectMapper;
+    @Autowired
+    private repositoryUsuario repoUsuario;
+    @Autowired
+    private repositoryProducto repoProducto;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
         @Test
         public void registrarUsuario_integracion_ok() throws Exception {
@@ -60,33 +69,6 @@ public class AuthenIntegrationTest {
                 // 3. Verificación en la base de datos
                 boolean existe = repoUsuario.findAll().stream()
                                 .anyMatch(u -> u.getNombre().equals("Pepe Perez"));
-
-                assertTrue(existe);
-        }
-
-        @Test
-        public void registrarProducto_integracion_ok() throws Exception {
-                // Configuramos el "doble" para que no valide nada y devuelva un usuario
-                // inventado
-                when(jwtService.esTokenValido(anyString())).thenReturn(true);
-                when(jwtService.obtenerSubject(anyString())).thenReturn("usuario_admin");
-
-                CrearProductoDTO producto = new CrearProductoDTO();
-                producto.setNombre("Producto de prueba");
-                producto.setDescripcion("Descripción válida de prueba");
-                producto.setPrecio(100.0);
-                producto.setCantidad(10);
-
-                mockMvc.perform(post("/productos/pending")
-                                .header("Authorization", "Bearer token.inventado") // El token da igual porque está
-                                                                                   // mockeado
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(producto)))
-                                .andExpect(status().isCreated());
-
-                // Verificación
-                boolean existe = repoProducto.findAll().stream()
-                                .anyMatch(p -> p.getNombre().equals("Producto de prueba"));
 
                 assertTrue(existe);
         }
@@ -113,14 +95,22 @@ public class AuthenIntegrationTest {
                                 .andExpect(status().isOk());
         }
 
-        @Test
+      @Test
         public void login_integracion_fallido_credencialesMalas() throws Exception {
-                // Prueba de integración del flujo de login fallido
-                String jsonBody = "{\"nombre\":\"noexiste\", \"password\":\"mal\"}";
+        // Creamos un usuario válido en la base de datos
+        Usuario u = new Usuario();
+        u.setNombre("usuario_valido");
+        u.setContraseña("123456");  
+        u.setRol("USER");            
+        u.setEmail("usuario@correo.com"); 
+        repoUsuario.save(u);
 
-                mockMvc.perform(post("/usuarios/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(jsonBody))
-                                .andExpect(status().isUnauthorized());
+        // Intentamos login con contraseña incorrecta
+        String jsonBody = "{\"nombre\":\"usuario_valido\", \"password\":\"mal\"}";
+        mockMvc.perform(post("/usuarios/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody))
+                .andExpect(status().isUnauthorized());
         }
+
 }

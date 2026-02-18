@@ -145,5 +145,6 @@ public class ServiceAuthenTest {
         assertEquals(1L, resultado.getId());
         assertEquals("Juan Modificado", resultado.getNombre());
         verify(repoUsuario).save(datosNuevos);
+        
     }
 }
