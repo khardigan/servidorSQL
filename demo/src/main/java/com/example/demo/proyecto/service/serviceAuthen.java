@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,16 +27,8 @@ public class serviceAuthen {
     private final serviceJWT jwtService;
     private final repositoryProducto repoProducto;
     private final repositoryLista repoLista;
-    @Autowired
-    private repositoryUsuario repoUsuario;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    // Usuarios → rol
-    private final Map<String, String> roles = Map.of(
-            "admin", "ADMIN",
-            "juan", "USER",
-            "jose", "DISTRIBUTOR");
+    private final repositoryUsuario repoUsuario;
+    private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void init() {
@@ -65,8 +55,6 @@ public class serviceAuthen {
             perfil.setNombrePerfil("Administrador"); // O cualquier valor válido
             perfil.setDescripcion("Perfil del usuario administrador"); // O cualquier valor válido
             admin.setPerfilUsuario(perfil);
-
-            repoUsuario.save(admin);
 
             repoUsuario.save(admin);
             System.out.println("Usuario admin creado con éxito.");

@@ -37,18 +37,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String jwt = authHeader.substring(7);
-        final String userEmail = jwtService.obtenerSubject(jwt);
+        try {
+            final String userEmail = jwtService.obtenerSubject(jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtService.esTokenValido(jwt)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userEmail,
-                        null,
-                        new ArrayList<>() // Aquí podrías cargar los roles reales del token si lo deseas
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtService.esTokenValido(jwt)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userEmail,
+                            null,
+                            new ArrayList<>() // Aquí podrías cargar los roles reales del token si lo deseas
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Token expirado, no hace falta ensuciar el log con el stacktrace completo
+            // solo si quieres ver un aviso corto:
+            // System.err.println("Token JWT expirado");
+        } catch (Exception e) {
+            // Otros errores (token malformado, firma inválida, etc.)
+            System.err.println("Error procesando JWT: " + e.getMessage());
         }
         filterChain.doFilter(request, response);
     }
