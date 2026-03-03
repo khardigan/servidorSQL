@@ -140,10 +140,13 @@ public class controllerUsuario {
                     .body("Usuario no encontrado");
         }
 
-        PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilDTO(id.intValue());
+        // IMPORTANT: We must fetch the profile using the Profile ID associated with the
+        // user,
+        // not the User ID directly, because they might differ.
+        PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilDTO(usuario.getIdPerfil());
         if (perfil == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Perfil no encontrado");
+                    .body("Perfil no encontrado para este usuario");
         }
 
         return ResponseEntity.ok(perfil);

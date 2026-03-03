@@ -11,6 +11,7 @@ public class ProductoDTO {
     private int cantidad;
     private Long usuarioRegistradorId;
     private List<Long> listas;
+    private boolean confirmado;
 
     public Long getId() {
         return id;
@@ -68,9 +69,12 @@ public class ProductoDTO {
         this.listas = listas;
     }
 
-    public void setConfirmado(boolean b) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public boolean isConfirmado() {
+        return confirmado;
     }
 
+    public void setConfirmado(boolean confirmado) {
+        this.confirmado = confirmado;
+    }
 
 }

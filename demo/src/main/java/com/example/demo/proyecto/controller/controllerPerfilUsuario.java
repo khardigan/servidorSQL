@@ -16,12 +16,12 @@ import com.example.demo.proyecto.service.servicePerfilUsuario;
 import jakarta.validation.Valid;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/perfiles")
 public class controllerPerfilUsuario {
 
     private final servicePerfilUsuario service;
-        private final serviceJWT serviceJWT;
-
+    private final serviceJWT serviceJWT;
 
     public controllerPerfilUsuario(servicePerfilUsuario service, serviceJWT serviceJWT) {
         this.service = service;
@@ -34,13 +34,26 @@ public class controllerPerfilUsuario {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtener(@PathVariable Integer id) {
+    public ResponseEntity<?> obtener(@PathVariable Integer id, @RequestHeader("Authorization") String authHeader) {
+        String token = serviceJWT.limpiarToken(authHeader);
+        if (token == null || !serviceJWT.esTokenValido(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+        }
+
         PerfilUsuarioDTO perfil = service.obtenerPerfilDTO(id);
-        if (perfil == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
+        if (perfil == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
+        }
+
+        Long idToken = serviceJWT.obtenerId(token);
+        String rol = serviceJWT.obtenerRol(token);
+
+        if (!rol.equals("ADMIN") && !idToken.equals(perfil.getUsuarioId())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No tienes permisos para ver este perfil");
+        }
+
         return ResponseEntity.ok(perfil);
     }
-
-  
 
     @PostMapping
     public ResponseEntity<?> crear(
@@ -74,16 +87,7 @@ public class controllerPerfilUsuario {
         }
     }
 
-
-
-
-
-
-
-
-
-
-   @PutMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Integer id,
             @Valid @RequestBody CrearPerfilRequestDTO datos,
@@ -112,7 +116,6 @@ public class controllerPerfilUsuario {
         return ResponseEntity.ok(actualizado);
     }
 
-
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(
             @PathVariable Integer id,
@@ -137,32 +140,20 @@ public class controllerPerfilUsuario {
         }
 
         boolean ok = service.eliminarPerfil(id);
-        if (!ok) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
+        if (!ok)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
 
         return ResponseEntity.noContent().build();
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @GetMapping("/{id}/usuario")
     public ResponseEntity<?> obtenerUsuarioDelPerfil(@PathVariable Integer id) {
         PerfilUsario p = service.buscarPerfilPorId(id);
-        if (p == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
+        if (p == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
         Usuario u = service.obtenerUsuarioDelPerfil(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        if (u == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.ok(u);
     }
 }

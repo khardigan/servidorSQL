@@ -71,7 +71,15 @@ public class serviceAuthen {
             repoUsuario.save(admin);
             System.out.println("Usuario admin creado con éxito.");
         } else {
-            System.out.println("Usuario admin ya existe, no se creó de nuevo.");
+            // extra sin borrar)
+            repoUsuario.findAll().stream()
+                    .filter(u -> u.getNombre().equals("admin"))
+                    .findFirst()
+                    .ifPresent(admin -> {
+                        admin.setContraseña(passwordEncoder.encode("admin123"));
+                        repoUsuario.save(admin);
+                    });
+            System.out.println("Usuario admin ya existe.");
         }
     }
 
@@ -98,14 +106,20 @@ public class serviceAuthen {
                 .filter(u -> u.getNombre().equalsIgnoreCase(nombre))
                 .findFirst()
                 .orElse(null);
-        System.out.println(passwordEncoder.matches(password, usuario.getContraseña()));
-        if (usuario == null || !passwordEncoder.matches(password, usuario.getContraseña())) {
+
+        if (usuario == null) {
+            System.out.println("Usuario no encontrado: " + nombre);
+            return null;
+        }
+
+        if (!passwordEncoder.matches(password, usuario.getContraseña())) {
+            System.out.println("Password incorrecta para: " + nombre);
             return null;
         }
 
         // Pasa el id del usuario al token
         String token = jwtService.generarToken(nombre, usuario.getRol(), usuario.getId());
-        return AuthResponse.builder().token(token).nombre(nombre).rol(usuario.getRol()).build();
+        return AuthResponse.builder().token(token).nombre(nombre).rol(usuario.getRol()).id(usuario.getId()).build();
     }
 
     public UsuarioDTO obtenerUsuarioDTO(Long id) {
@@ -174,7 +188,8 @@ public class serviceAuthen {
         repoUsuario.save(usuario); // Guardamos el usuario primero
 
         String token = jwtService.generarToken(usuario.getNombre(), usuario.getRol(), usuario.getId());
-        return AuthResponse.builder().token(token).nombre(usuario.getNombre()).rol(usuario.getRol()).build();
+        return AuthResponse.builder().token(token).nombre(usuario.getNombre()).rol(usuario.getRol()).id(usuario.getId())
+                .build();
     }
 
     public Usuario actualizarUsuario(Long id, Usuario datos) {
@@ -220,7 +235,7 @@ public class serviceAuthen {
 
     public AuthResponse renovarToken(String nombre, String rol, Long id) {
         String token = jwtService.generarToken(nombre, rol, id);
-        return AuthResponse.builder().token(token).nombre(nombre).rol(rol).build();
+        return AuthResponse.builder().token(token).nombre(nombre).rol(rol).id(id).build();
     }
 
     // ----------------- Conversión a DTO -----------------

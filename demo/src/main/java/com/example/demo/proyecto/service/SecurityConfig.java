@@ -18,30 +18,38 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
-    // Seguridad principal: HTTPS + Autenticación básica
+    private final JwtAuthenticationFilter jwtAuthFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
+
+    // Seguridad principal: HTTPS + JWT
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-        .csrf(csrf -> csrf.disable())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/public/**").permitAll()
-            .anyRequest().authenticated()
-        )
-        .httpBasic(httpBasic -> {}); // <- Lambda vacía, equivalente a configuración por defecto
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(
+                        org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/usuarios/login", "/usuarios/registrar").permitAll()
+                        .requestMatchers("/productos", "/productos/buscar").permitAll()
+                        .requestMatchers("/public/**").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-
 
     // Usuario en memoria
     @Bean
     public InMemoryUserDetailsManager userDetailsService() {
         UserDetails user = User.withUsername("admin")
-                               .password(passwordEncoder().encode("1234"))
-                               .roles("ADMIN")
-                               .build();
+                .password(passwordEncoder().encode("1234"))
+                .roles("ADMIN")
+                .build();
         return new InMemoryUserDetailsManager(user);
     }
 
@@ -52,11 +60,11 @@ public class SecurityConfig {
     }
 
     // Configuración CORS para Angular
-       @Bean
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

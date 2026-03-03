@@ -40,16 +40,23 @@ public class controllerProducto {
         this.jwtService = jwtService;
     }
 
-    //---------------- Listar --------------
+    // ---------------- Listar --------------
     @GetMapping
     public ResponseEntity<List<ProductoDTO>> listar() {
         return ResponseEntity.ok(service.listarProductosDTO());
     }
 
+    // ---------------- Buscar --------------
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ProductoDTO>> buscar(@org.springframework.web.bind.annotation.RequestParam String q) {
+        return ResponseEntity.ok(service.buscarProductosDTO(q));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id) {
         ProductoDTO p = service.obtenerProductoDTO(id);
-        if (p == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        if (p == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
         return ResponseEntity.ok(p);
     }
 
@@ -70,12 +77,12 @@ public class controllerProducto {
         System.out.println("Subject: " + subject);
 
         Usuario usuario = encontrarUsuarioPorNombre(subject);
-        if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+        if (usuario == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         ProductoDTO temp = service.guardarProductoTemporal(dtoRequest, usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(temp);
     }
-
 
     // ---------------- Confirmar producto ----------------
     @PostMapping("/confirm/{tempId}")
@@ -89,7 +96,8 @@ public class controllerProducto {
         }
 
         Usuario admin = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
-        if (admin == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+        if (admin == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         try {
             ProductoDTO confirmado = service.confirmarProducto(tempId, admin);
@@ -111,11 +119,13 @@ public class controllerProducto {
         }
 
         Usuario admin = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
-        if (admin == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+        if (admin == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         try {
             boolean ok = service.rechazarProducto(tempId, admin);
-            return ok ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+            return ok ? ResponseEntity.noContent().build()
+                    : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
@@ -134,10 +144,12 @@ public class controllerProducto {
         }
 
         Usuario usuario = encontrarUsuarioPorNombre(jwtService.obtenerSubject(token));
-        if (usuario == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+        if (usuario == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
         ProductoDTO actualizado = service.actualizarProducto(id, dtoRequest, usuario);
-        if (actualizado == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        if (actualizado == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
 
         return ResponseEntity.ok(actualizado);
     }
@@ -155,31 +167,37 @@ public class controllerProducto {
 
         String rol = jwtService.obtenerRol(token);
         ProductoDTO producto = service.obtenerProductoDTO(id);
-        if (producto == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        if (producto == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
 
         if (!rol.equals("ADMIN")) {
             String nombreUsuario = jwtService.obtenerSubject(token);
             if (producto.getUsuarioRegistradorId() == null ||
-                !producto.getUsuarioRegistradorId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el dueño o admin pueden eliminar este producto");
+                    !producto.getUsuarioRegistradorId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Solo el dueño o admin pueden eliminar este producto");
             }
         }
 
         boolean ok = service.eliminarProducto(producto.getId());
-        if (!ok) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        if (!ok)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
 
         return ResponseEntity.noContent().build();
     }
 
-    //--------------- Listas del producto ----------
+    // --------------- Listas del producto ----------
     @GetMapping("/{id}/listas")
     public ResponseEntity<?> obtenerListasDelProducto(@PathVariable Long id) {
         ProductoDTO p = service.obtenerProductoDTO(id);
-        if (p == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
+        if (p == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
         return ResponseEntity.ok(p.getListas());
     }
+
     private String extraerToken(String authHeader) {
-        if (authHeader == null) return null;
+        if (authHeader == null)
+            return null;
         authHeader = authHeader.trim();
         if (authHeader.toLowerCase().startsWith("bearer ")) {
             return authHeader.substring(7).trim();
@@ -188,9 +206,9 @@ public class controllerProducto {
         return null;
     }
 
-
     private Usuario encontrarUsuarioPorNombre(String nombre) {
-        if (nombre == null) return null;
+        if (nombre == null)
+            return null;
         Optional<Usuario> opt = repoUsuario.findAll().stream()
                 .filter(u -> nombre.equals(u.getNombre()))
                 .findFirst();

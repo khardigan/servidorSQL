@@ -30,18 +30,16 @@ public class serviceProducto {
     private final Map<Long, Producto> productosPendientes = new HashMap<>();
     private long nextTempId = 1L;
 
-
     public serviceProducto(repositoryProducto repoProducto, repositoryUsuario repoUsuario) {
         this.repoProducto = repoProducto;
         this.repoUsuario = repoUsuario;
     }
 
-
     @PostConstruct
     public void init() {
         // 1. Verificamos si ya hay productos para no duplicarlos cada vez que reinicies
         if (repoProducto.count() == 0) {
-            
+
             // 2. Necesitamos un usuario para asignar los productos (buscamos al admin)
             Usuario admin = repoUsuario.findAll().stream()
                     .filter(u -> u.getNombre().equals("admin"))
@@ -53,9 +51,10 @@ public class serviceProducto {
 
                 // Producto 1
                 Producto p1 = new Producto();
-                p1.setNombre("Laptop Gaming");
-                p1.setDescripcion("Procesador i9, 32GB RAM, RTX 4080");
-                p1.setPrecio(2500.0);
+                p1.setNombre("MacBook Pro M3 Max");
+                p1.setDescripcion(
+                        "Pantalla Liquid Retina XDR de 16\", 64GB RAM unificada, 2TB SSD. Rendimiento extremo espacial.");
+                p1.setPrecio(4299.0);
                 p1.setCantidad(10);
                 p1.setConfirmado(true); // Los de default los ponemos ya confirmados
                 p1.setUsuarioRegistrador(admin);
@@ -63,9 +62,10 @@ public class serviceProducto {
 
                 // Producto 2
                 Producto p2 = new Producto();
-                p2.setNombre("Monitor 4K");
-                p2.setDescripcion("32 pulgadas, 144Hz, HDR10");
-                p2.setPrecio(600.0);
+                p2.setNombre("Monitor Odyssey OLED G9");
+                p2.setDescripcion(
+                        "49 pulgadas ultrapanorámico, 240Hz, 0.03ms. Inmersión total para gaming profesional.");
+                p2.setPrecio(1599.0);
                 p2.setCantidad(15);
                 p2.setConfirmado(true);
                 p2.setUsuarioRegistrador(admin);
@@ -73,13 +73,100 @@ public class serviceProducto {
 
                 // Producto 3
                 Producto p3 = new Producto();
-                p3.setNombre("Teclado Mecánico");
-                p3.setDescripcion("RGB, Switches Blue, Layout Español");
-                p3.setPrecio(120.0);
+                p3.setNombre("Teclado Keychron Q1 Pro");
+                p3.setDescripcion(
+                        "Mecánico personalizado 75%, inalámbrico QMK/VIA, cuerpo de aluminio mecanizado CNC con switches Banana.");
+                p3.setPrecio(199.0);
                 p3.setCantidad(50);
                 p3.setConfirmado(true);
                 p3.setUsuarioRegistrador(admin);
                 productosDefault.add(p3);
+
+                // --- Additional seed products ---
+                // Producto 4
+                Producto p4 = new Producto();
+                p4.setNombre("iPhone 15 Pro Max");
+                p4.setDescripcion(
+                        "Titanio aeroespacial, chip A17 Pro, 256GB, sistema de cámaras Pro con zoom óptico 5x.");
+                p4.setPrecio(1469.0);
+                p4.setCantidad(30);
+                p4.setConfirmado(true);
+                p4.setUsuarioRegistrador(admin);
+                productosDefault.add(p4);
+
+                // Producto 5
+                Producto p5 = new Producto();
+                p5.setNombre("Sony WH-1000XM5");
+                p5.setDescripcion(
+                        "Auriculares inalámbricos con líder de la industria en cancelación de ruido y llamadas de voz premium.");
+                p5.setPrecio(399.0);
+                p5.setCantidad(40);
+                p5.setConfirmado(true);
+                p5.setUsuarioRegistrador(admin);
+                productosDefault.add(p5);
+
+                // Producto 6
+                Producto p6 = new Producto();
+                p6.setNombre("Sony Alpha 7 IV");
+                p6.setDescripcion(
+                        "Cámara EVIL de formato completo, 33 MP, grabación 4K 60p, enfoque automático en tiempo real. Solo cuerpo.");
+                p6.setPrecio(2499.0);
+                p6.setCantidad(15);
+                p6.setConfirmado(true);
+                p6.setUsuarioRegistrador(admin);
+                productosDefault.add(p6);
+
+                // Producto 7
+                Producto p7 = new Producto();
+                p7.setNombre("iPad Pro 11\"");
+                p7.setDescripcion(
+                        "Pantalla Liquid Retina, Chip M2, 256GB, Wi-Fi 6E. Ideal para creativos en movimiento.");
+                p7.setPrecio(1049.0);
+                p7.setCantidad(25);
+                p7.setConfirmado(true);
+                p7.setUsuarioRegistrador(admin);
+                productosDefault.add(p7);
+
+                // Producto 8
+                Producto p8 = new Producto();
+                p8.setNombre("Logitech MX Master 3S");
+                p8.setDescripcion("Ratón inalámbrico de alto rendimiento con sensor de 8K DPI y clics silenciosos.");
+                p8.setPrecio(129.0);
+                p8.setCantidad(100);
+                p8.setConfirmado(true);
+                p8.setUsuarioRegistrador(admin);
+                productosDefault.add(p8);
+
+                // Producto 9
+                Producto p9 = new Producto();
+                p9.setNombre("Samsung Galaxy S24 Ultra");
+                p9.setDescripcion("Pantalla Dynamic AMOLED 2X de 6.8\", S Pen integrado, cámara de 200MP y Titanio.");
+                p9.setPrecio(1459.0);
+                p9.setCantidad(20);
+                p9.setConfirmado(true);
+                p9.setUsuarioRegistrador(admin);
+                productosDefault.add(p9);
+
+                // Producto 10
+                Producto p10 = new Producto();
+                p10.setNombre("Nintendo Switch OLED");
+                p10.setDescripcion(
+                        "Consola con pantalla OLED de 7 pulgadas, base con puerto LAN por cable y 64GB de memoria.");
+                p10.setPrecio(349.0);
+                p10.setCantidad(60);
+                p10.setConfirmado(true);
+                p10.setUsuarioRegistrador(admin);
+                productosDefault.add(p10);
+
+                // Producto 11
+                Producto p11 = new Producto();
+                p11.setNombre("ASUS ROG Zephyrus G14");
+                p11.setDescripcion("Portátil Gaming de 14\", Ryzen 9, RTX 4070, 32GB RAM, 1TB SSD. Potencia compacta.");
+                p11.setPrecio(2199.0);
+                p11.setCantidad(8);
+                p11.setConfirmado(true);
+                p11.setUsuarioRegistrador(admin);
+                productosDefault.add(p11);
 
                 // Guardar todos en la base de datos
                 repoProducto.saveAll(productosDefault);
@@ -90,12 +177,17 @@ public class serviceProducto {
         }
     }
 
-
-
     // ---------------- Listar ----------------
 
     public List<ProductoDTO> listarProductosDTO() {
         return repoProducto.findAll()
+                .stream()
+                .map(this::convertirAProductoDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductoDTO> buscarProductosDTO(String nombre) {
+        return repoProducto.findByNombreContainingIgnoreCase(nombre)
                 .stream()
                 .map(this::convertirAProductoDTO)
                 .collect(Collectors.toList());
@@ -136,7 +228,8 @@ public class serviceProducto {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
         }
         Producto p = productosPendientes.remove(tempId);
-        if (p == null) throw new RuntimeException("Producto no encontrado o ya confirmado");
+        if (p == null)
+            throw new RuntimeException("Producto no encontrado o ya confirmado");
 
         p.setConfirmado(true);
         Producto saved = repoProducto.save(p);
@@ -151,14 +244,13 @@ public class serviceProducto {
         return productosPendientes.remove(tempId) != null;
     }
 
-
-
     // ---------------- Actualizar ----------------
 
     @Transactional
     public ProductoDTO actualizarProducto(Long id, CrearProductoDTO dto, Usuario usuario) {
         Producto producto = repoProducto.findById(id).orElse(null);
-        if (producto == null) return null;
+        if (producto == null)
+            return null;
 
         // Actualizar campos desde el DTO
         producto.setNombre(dto.getNombre());
@@ -184,7 +276,8 @@ public class serviceProducto {
     // ---------------- Conversión a DTO ----------------
 
     private ProductoDTO convertirAProductoDTO(Producto p) {
-        if (p == null) return null;
+        if (p == null)
+            return null;
 
         ProductoDTO dto = new ProductoDTO();
         dto.setId(p.getId());
@@ -193,18 +286,14 @@ public class serviceProducto {
         dto.setPrecio(p.getPrecio());
         dto.setCantidad(p.getCantidad());
         dto.setUsuarioRegistradorId(p.getUsuarioRegistrador() != null ? p.getUsuarioRegistrador().getId() : null);
+        dto.setConfirmado(p.isConfirmado());
 
         dto.setListas(
                 p.getListas() != null
                         ? p.getListas().stream().map(Lista::getCodLista).collect(Collectors.toList())
-                        : List.of()
-        );
+                        : List.of());
 
         return dto;
     }
-
-
-
-
 
 }
