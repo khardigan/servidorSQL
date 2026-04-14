@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
@@ -26,7 +27,6 @@ import com.example.demo.proyecto.service.serviceProducto;
 import jakarta.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/productos")
 public class controllerProducto {
 
@@ -48,7 +48,7 @@ public class controllerProducto {
 
     // ---------------- Buscar --------------
     @GetMapping("/buscar")
-    public ResponseEntity<List<ProductoDTO>> buscar(@org.springframework.web.bind.annotation.RequestParam String q) {
+    public ResponseEntity<List<ProductoDTO>> buscar(@RequestParam String q) {
         return ResponseEntity.ok(service.buscarProductosDTO(q));
     }
 
@@ -66,16 +66,11 @@ public class controllerProducto {
             @Valid @RequestBody CrearProductoDTO dtoRequest,
             @RequestHeader("Authorization") String authHeader) {
 
-        System.out.println("authHeader recibido: " + authHeader);
         String token = extraerToken(authHeader);
-        System.out.println("Token extraído: " + token);
-
-        boolean valido = jwtService.esTokenValido(token);
-        System.out.println("¿Token válido? " + valido);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
         String subject = jwtService.obtenerSubject(token);
-        System.out.println("Subject: " + subject);
-
         Usuario usuario = encontrarUsuarioPorNombre(subject);
         if (usuario == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");

@@ -42,13 +42,7 @@ public class serviceUsuario {
         return repoUsuario.save(datos);
     }
 
-    public boolean eliminarUsuario(Long id) {
-        if (repoUsuario.existsById(id)) {
-            repoUsuario.deleteById(id);
-            return true;
-        }
-        return false;
-    }
+   
 
     public List<Producto> obtenerProductosSubidosPorUsuario(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);

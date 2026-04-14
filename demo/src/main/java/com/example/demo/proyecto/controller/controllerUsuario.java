@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +27,6 @@ import com.example.demo.proyecto.service.servicePerfilUsuario;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/usuarios")
 public class controllerUsuario {
@@ -41,12 +40,6 @@ public class controllerUsuario {
         this.serviceAuthen = serviceAuthen;
         this.serviceJWT = serviceJWT;
         this.servicePerfil = servicePerfil;
-    }
-
-    // ----------------- LISTAR USUARIOS -----------------
-    @GetMapping
-    public ResponseEntity<?> listar() {
-        return ResponseEntity.ok(serviceAuthen.listarUsuariosDTO());
     }
 
     // ----------------- LOGIN -----------------
@@ -84,6 +77,12 @@ public class controllerUsuario {
         Long id = serviceJWT.obtenerId(token);
         AuthResponse nuevoToken = serviceAuthen.renovarToken(nombre, rol, id);
         return ResponseEntity.ok(nuevoToken);
+    }
+
+    // ----------------- LISTAR USUARIOS -----------------
+    @GetMapping
+    public ResponseEntity<?> listar() {
+        return ResponseEntity.ok(serviceAuthen.listarUsuariosDTO());
     }
 
     // ----------------- OBTENER USUARIO POR ID (ADMIN) -----------------

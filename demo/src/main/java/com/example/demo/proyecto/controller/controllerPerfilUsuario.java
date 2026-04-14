@@ -16,7 +16,6 @@ import com.example.demo.proyecto.service.servicePerfilUsuario;
 import jakarta.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/perfiles")
 public class controllerPerfilUsuario {
 

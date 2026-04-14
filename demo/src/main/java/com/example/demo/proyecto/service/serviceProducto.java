@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.proyecto.dto.ProductoDTO;
 import com.example.demo.proyecto.dto.CrearProductoDTO;
-import com.example.demo.proyecto.model.Lista;
+
 import com.example.demo.proyecto.model.Producto;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryProducto;
@@ -27,8 +27,6 @@ public class serviceProducto {
 
     private final repositoryProducto repoProducto;
     private final repositoryUsuario repoUsuario;
-    private final Map<Long, Producto> productosPendientes = new HashMap<>();
-    private long nextTempId = 1L;
 
     public serviceProducto(repositoryProducto repoProducto, repositoryUsuario repoUsuario) {
         this.repoProducto = repoProducto;
@@ -46,7 +44,7 @@ public class serviceProducto {
                     .findFirst()
                     .orElse(null);
 
-            if (admin != null) {
+            if (admin != null) { /* Se crean 9 productos por defecto */
                 List<Producto> productosDefault = new ArrayList<>();
 
                 // Producto 1
@@ -208,27 +206,18 @@ public class serviceProducto {
         producto.setUsuarioRegistrador(usuario);
         producto.setConfirmado(false);
 
-        long tempId = nextTempId++;
-        productosPendientes.put(tempId, producto);
-
-        ProductoDTO dtoResp = new ProductoDTO();
-        dtoResp.setId(tempId);
-        dtoResp.setNombre(producto.getNombre());
-        dtoResp.setDescripcion(producto.getDescripcion());
-        dtoResp.setPrecio(producto.getPrecio());
-        dtoResp.setCantidad(producto.getCantidad());
-        dtoResp.setUsuarioRegistradorId(usuario.getId());
-        dtoResp.setConfirmado(false);
-        return dtoResp;
+        // Lo guardamos en base de datos para que tenga un ID REAL y sea persistente
+        Producto guardado = repoProducto.save(producto);
+        return convertirAProductoDTO(guardado);
     }
 
     // Confirmar producto
-    public ProductoDTO confirmarProducto(Long tempId, Usuario admin) {
+    public ProductoDTO confirmarProducto(Long realId, Usuario admin) {
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
         }
-        Producto p = productosPendientes.remove(tempId);
-        if (p == null)
+        Producto p = repoProducto.findById(realId).orElse(null);
+        if (p == null || p.isConfirmado())
             throw new RuntimeException("Producto no encontrado o ya confirmado");
 
         p.setConfirmado(true);
@@ -237,11 +226,15 @@ public class serviceProducto {
     }
 
     // Rechazar producto
-    public boolean rechazarProducto(Long tempId, Usuario admin) {
+    public boolean rechazarProducto(Long realId, Usuario admin) {
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para rechazar este producto");
         }
-        return productosPendientes.remove(tempId) != null;
+        if (repoProducto.existsById(realId)) {
+            repoProducto.deleteById(realId);
+            return true;
+        }
+        return false;
     }
 
     // ---------------- Actualizar ----------------
@@ -290,7 +283,7 @@ public class serviceProducto {
 
         dto.setListas(
                 p.getListas() != null
-                        ? p.getListas().stream().map(Lista::getCodLista).collect(Collectors.toList())
+                        ? p.getListas().stream().map(lp -> lp.getLista().getCodLista()).collect(Collectors.toList())
                         : List.of());
 
         return dto;

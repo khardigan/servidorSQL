@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import com.example.demo.proyecto.dto.AuthResponse;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
+import com.example.demo.proyecto.model.Lista;
+import com.example.demo.proyecto.model.ListaProducto;
 import com.example.demo.proyecto.model.PerfilUsario;
 import com.example.demo.proyecto.model.Producto;
 import com.example.demo.proyecto.model.Usuario;
@@ -31,43 +33,170 @@ public class serviceAuthen {
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
+    @Transactional
     public void init() {
-        // Verifica si ya existe el usuario admin
+        // ===================== USUARIOS =====================
         boolean adminExiste = repoUsuario.findAll().stream()
                 .anyMatch(u -> u.getNombre().equals("admin"));
 
+        Usuario admin;
+        Usuario usuario2;
+        Usuario usuario3;
+
         if (!adminExiste) {
-            // Crear admin con contraseña encriptada
-            Usuario admin = new Usuario();
+            // ---------- Usuario 1: admin ----------
+            admin = new Usuario();
             admin.setNombre("admin");
             admin.setEmail("admin@example.com");
             admin.setContraseña(passwordEncoder.encode("admin123"));
             admin.setRol("ADMIN");
             admin.setFechaRegistro(LocalDate.now());
-
-            // Inicializar listas y perfil
             admin.setListaProductosSubidos(new ArrayList<>());
             admin.setListasCreadas(new ArrayList<>());
             admin.setListasCompartidas(new ArrayList<>());
 
-            PerfilUsario perfil = new PerfilUsario();
-            perfil.setUsuario(admin);
-            perfil.setNombrePerfil("Administrador"); // O cualquier valor válido
-            perfil.setDescripcion("Perfil del usuario administrador"); // O cualquier valor válido
-            admin.setPerfilUsuario(perfil);
+            PerfilUsario perfilAdmin = new PerfilUsario();
+            perfilAdmin.setUsuario(admin);
+            perfilAdmin.setNombrePerfil("Administrador");
+            perfilAdmin.setDescripcion("Perfil del usuario administrador");
+            admin.setPerfilUsuario(perfilAdmin);
 
-            repoUsuario.save(admin);
+            admin = repoUsuario.save(admin);
             System.out.println("Usuario admin creado con éxito.");
+
+            // ---------- Usuario 2: usuario2 ----------
+            usuario2 = new Usuario();
+            usuario2.setNombre("usuario2");
+            usuario2.setEmail("usuario2@example.com");
+            usuario2.setContraseña(passwordEncoder.encode("user1234"));
+            usuario2.setRol("USER");
+            usuario2.setFechaRegistro(LocalDate.now());
+            usuario2.setListaProductosSubidos(new ArrayList<>());
+            usuario2.setListasCreadas(new ArrayList<>());
+            usuario2.setListasCompartidas(new ArrayList<>());
+
+            PerfilUsario perfilUser2 = new PerfilUsario();
+            perfilUser2.setUsuario(usuario2);
+            perfilUser2.setNombrePerfil("UsuarioDos");
+            perfilUser2.setDescripcion("Perfil del segundo usuario de prueba");
+            usuario2.setPerfilUsuario(perfilUser2);
+
+            usuario2 = repoUsuario.save(usuario2);
+            System.out.println("Usuario usuario2 creado con éxito.");
+
+            // ---------- Usuario 3: usuario3 ----------
+            usuario3 = new Usuario();
+            usuario3.setNombre("usuario3");
+            usuario3.setEmail("usuario3@example.com");
+            usuario3.setContraseña(passwordEncoder.encode("user1234"));
+            usuario3.setRol("USER");
+            usuario3.setFechaRegistro(LocalDate.now());
+            usuario3.setListaProductosSubidos(new ArrayList<>());
+            usuario3.setListasCreadas(new ArrayList<>());
+            usuario2.setListasCompartidas(new ArrayList<>());
+
+            PerfilUsario perfilUser3 = new PerfilUsario();
+            perfilUser3.setUsuario(usuario3);
+            perfilUser3.setNombrePerfil("UsuarioTres");
+            perfilUser3.setDescripcion("Perfil del tercer usuario de prueba");
+            usuario3.setPerfilUsuario(perfilUser3);
+
+            usuario3 = repoUsuario.save(usuario3);
+            System.out.println("Usuario usuario3 creado con éxito.");
+
+            // ===================== PRODUCTOS =====================
+            Producto leche = new Producto();
+            leche.setNombre("Leche entera");
+            leche.setDescripcion("Brick de leche entera 1L");
+            leche.setPrecio(1.20);
+            leche.setCantidad(3);
+            leche.setConfirmado(true);
+            leche.setUsuarioRegistrador(admin);
+            leche = repoProducto.save(leche);
+
+            Producto pan = new Producto();
+            pan.setNombre("Pan integral");
+            pan.setDescripcion("Barra de pan integral de 500g");
+            pan.setPrecio(1.50);
+            pan.setCantidad(2);
+            pan.setConfirmado(true);
+            pan.setUsuarioRegistrador(admin);
+            pan = repoProducto.save(pan);
+
+            Producto huevos = new Producto();
+            huevos.setNombre("Huevos camperos");
+            huevos.setDescripcion("Docena de huevos camperos frescos");
+            huevos.setPrecio(2.80);
+            huevos.setCantidad(1);
+            huevos.setConfirmado(true);
+            huevos.setUsuarioRegistrador(usuario2);
+            huevos = repoProducto.save(huevos);
+
+            Producto arroz = new Producto();
+            arroz.setNombre("Arroz basmati");
+            arroz.setDescripcion("Paquete de arroz basmati 1kg");
+            arroz.setPrecio(2.10);
+            arroz.setCantidad(1);
+            arroz.setConfirmado(true);
+            arroz.setUsuarioRegistrador(admin);
+            arroz = repoProducto.save(arroz);
+
+            System.out.println("Productos de prueba creados con éxito.");
+
+            // ===================== LISTAS =====================
+
+            // ---------- Lista 1: Compartida (admin dueño, usuario2 invitado) ----------
+            Lista listaCompartida = new Lista();
+            listaCompartida.setCodLista(1L);
+            listaCompartida.setUsuarioDueno(admin);
+            listaCompartida.setUsuariosCompartida(List.of(usuario2));
+
+            // Productos en la lista compartida: leche, pan, huevos
+            ListaProducto lp1 = new ListaProducto();
+            lp1.setLista(listaCompartida);
+            lp1.setProducto(leche);
+            lp1.setComprado(false);
+
+            ListaProducto lp2 = new ListaProducto();
+            lp2.setLista(listaCompartida);
+            lp2.setProducto(pan);
+            lp2.setComprado(true); // Este ya está comprado
+
+            ListaProducto lp3 = new ListaProducto();
+            lp3.setLista(listaCompartida);
+            lp3.setProducto(huevos);
+            lp3.setComprado(false);
+
+            listaCompartida.setProductosEnLista(List.of(lp1, lp2, lp3));
+            repoLista.save(listaCompartida);
+            System.out.println("Lista 1 (compartida) creada con éxito.");
+
+            // ---------- Lista 2: Privada (solo admin) ----------
+            Lista listaPrivada = new Lista();
+            listaPrivada.setCodLista(2L);
+            listaPrivada.setUsuarioDueno(admin);
+            listaPrivada.setUsuariosCompartida(new ArrayList<>());
+
+            // Productos en la lista privada: arroz
+            ListaProducto lp4 = new ListaProducto();
+            lp4.setLista(listaPrivada);
+            lp4.setProducto(arroz);
+            lp4.setComprado(false);
+
+            listaPrivada.setProductosEnLista(List.of(lp4));
+            repoLista.save(listaPrivada);
+            System.out.println("Lista 2 (privada de admin) creada con éxito.");
+
         } else {
-            // extra sin borrar)
+            // Si admin ya existe, solo actualizamos su contraseña
             repoUsuario.findAll().stream()
                     .filter(u -> u.getNombre().equals("admin"))
                     .findFirst()
-                    .ifPresent(admin -> {
-                        admin.setContraseña(passwordEncoder.encode("admin123"));
-                        repoUsuario.save(admin);
+                    .ifPresent(a -> {
+                        a.setContraseña(passwordEncoder.encode("admin123"));
+                        repoUsuario.save(a);
                     });
-            System.out.println("Usuario admin ya existe.");
+            System.out.println("Usuario admin ya existe. Datos de prueba no recreados.");
         }
     }
 
@@ -185,12 +314,36 @@ public class serviceAuthen {
         return repoUsuario.save(datos);
     }
 
+    @Transactional
     public boolean eliminarUsuario(Long id) {
-        if (repoUsuario.existsById(id)) {
-            repoUsuario.deleteById(id);
-            return true;
+        Usuario usuario = repoUsuario.findById(id).orElse(null);
+        if (usuario == null)
+            return false;
+
+        // 1. Quitar al usuario de todas las listas donde es invitado
+        List<com.example.demo.proyecto.model.Lista> listasCompartidas = usuario.getListasCompartidas();
+        if (listasCompartidas != null) {
+            for (com.example.demo.proyecto.model.Lista lista : new ArrayList<>(listasCompartidas)) {
+                lista.getUsuariosCompartida().remove(usuario);
+                repoLista.save(lista);
+            }
         }
-        return false;
+
+        // 2. Eliminar las listas donde el usuario es dueño
+        List<com.example.demo.proyecto.model.Lista> listasCreadas = usuario.getListasCreadas();
+        if (listasCreadas != null) {
+            repoLista.deleteAll(new ArrayList<>(listasCreadas));
+        }
+
+        // 3. Eliminar los productos que subió el usuario
+        List<com.example.demo.proyecto.model.Producto> productos = usuario.getListaProductosSubidos();
+        if (productos != null) {
+            repoProducto.deleteAll(new ArrayList<>(productos));
+        }
+
+        // 4. Ahora sí, eliminar el usuario limpiamente
+        repoUsuario.deleteById(id);
+        return true;
     }
 
     public void eliminarTodosUsuarios() {
