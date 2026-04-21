@@ -13,13 +13,16 @@ import com.example.demo.proyecto.model.Usuario;
 
 @Service
 public class serviceProductoPropio {
-    
+
     private final repositoryProductoPropio repoProductoPropio;
     private final repositoryUsuario repoUsuario;
+    private final com.example.demo.proyecto.repository.repositoryLista repoLista;
 
-    public serviceProductoPropio(repositoryProductoPropio repoProductoPropio, repositoryUsuario repoUsuario) {
+    public serviceProductoPropio(repositoryProductoPropio repoProductoPropio, repositoryUsuario repoUsuario,
+            com.example.demo.proyecto.repository.repositoryLista repoLista) {
         this.repoProductoPropio = repoProductoPropio;
         this.repoUsuario = repoUsuario;
+        this.repoLista = repoLista;
     }
 
     public List<ProductoPropioDTO> obtenerLista(Long usuarioId) {
@@ -38,11 +41,19 @@ public class serviceProductoPropio {
         producto.setNombre(dto.getNombre());
         producto.setPrecioObjetivo(dto.getPrecioObjetivo());
         producto.setNotas(dto.getNotas());
+        producto.setSupermercado(dto.getSupermercado());
+        producto.setCantidad(dto.getCantidad() != null ? dto.getCantidad() : 1);
+
+        // Asociar con lista si se proporciona el ID
+        if (dto.getListaId() != null) {
+            producto.setLista(repoLista.findById(dto.getListaId()).orElse(null));
+        }
 
         ProductoPropio guardado = repoProductoPropio.save(producto);
         return convertirADTO(guardado);
     }
 
+    @SuppressWarnings("null")
     public ProductoPropioDTO actualizarItem(Long id, CrearProductoPropioDTO dto) {
         ProductoPropio producto = repoProductoPropio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -50,6 +61,18 @@ public class serviceProductoPropio {
         producto.setNombre(dto.getNombre());
         producto.setPrecioObjetivo(dto.getPrecioObjetivo());
         producto.setNotas(dto.getNotas());
+        producto.setSupermercado(dto.getSupermercado());
+
+        // Actualizar asociación con lista: si viene null, se desvincula.
+        if (dto.getListaId() != null) {
+            producto.setLista(repoLista.findById(dto.getListaId()).orElse(null));
+        } else {
+            producto.setLista(null);
+        }
+
+        if (dto.getCantidad() != null) {
+            producto.setCantidad(dto.getCantidad());
+        }
 
         ProductoPropio actualizado = repoProductoPropio.save(producto);
         return convertirADTO(actualizado);
@@ -65,6 +88,9 @@ public class serviceProductoPropio {
         dto.setNombre(producto.getNombre());
         dto.setPrecioObjetivo(producto.getPrecioObjetivo());
         dto.setNotas(producto.getNotas());
+        dto.setSupermercado(producto.getSupermercado());
+        dto.setCantidad(producto.getCantidad());
+        dto.setListaId(producto.getLista() != null ? producto.getLista().getCodLista() : null);
         dto.setCreatedAt(producto.getCreatedAt());
         return dto;
     }

@@ -188,6 +188,7 @@ public class controllerUsuario {
     // ----------------- ELIMINAR USUARIO -----------------
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        System.out.println("PETICION RECIBIDA: DELETE /usuarios/" + id);
         String token = serviceJWT.limpiarToken(authHeader);
 
         if (token == null || !serviceJWT.esTokenValido(token)) {
@@ -196,6 +197,7 @@ public class controllerUsuario {
         }
 
         String rol = serviceJWT.obtenerRol(token);
+        Long idToken = serviceJWT.obtenerId(token);
 
         if (!rol.equals("ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");

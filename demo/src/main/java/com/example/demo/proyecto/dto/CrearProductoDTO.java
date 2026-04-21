@@ -24,6 +24,8 @@ public class CrearProductoDTO {
     @Range(min = 1, max = 1000, message = "La cantidad debe estar entre 1 y 1000")
     private Integer cantidad;
 
+    private String supermercado;
+
     public String getNombre() {
         return nombre;
     }
@@ -54,6 +56,14 @@ public class CrearProductoDTO {
 
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
+    }
+
+    public String getSupermercado() {
+        return supermercado;
+    }
+
+    public void setSupermercado(String supermercado) {
+        this.supermercado = supermercado;
     }
     
 

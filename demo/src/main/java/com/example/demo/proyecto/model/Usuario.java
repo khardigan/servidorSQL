@@ -40,14 +40,14 @@ public class Usuario {
     private Long id;
     
     @NotBlank(message = "El nombre de usuario no puede ser nulo")
-    @Size(min=2,max=75,message="El minimo es 2 y el maximo es 75 caracteres")
+    @Size(min=2,max=255,message="El nombre debe tener entre 2 y 255 caracteres")
     private String nombre;
     @NotBlank(message="El email no puede ser nulo")
-    @Size(min=5,max=100,message="El minimo es 5 y el maximo es 100 caracteres")
+    @Size(min=5,max=255,message="El email debe tener entre 5 y 255 caracteres")
     private String email;
 
     @NotBlank(message="La contraseña no puede ser nula")
-    @Size(min=4,max=100, message="El minimo de caracteres es 4 y el maximo de caracteres es 30")
+    @Size(min=4,max=255, message="La contraseña debe tener entre 4 y 255 caracteres")
     private String contraseña;
 
     @NotBlank(message="El rol no puede ser nulo")
@@ -55,14 +55,16 @@ public class Usuario {
 
     @PastOrPresent(message="La fecha de registro no puede ser futura")
     private LocalDate fechaRegistro;
+
+    private Boolean activo = true;
     
-    @OneToMany(mappedBy="usuarioRegistrador", cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy="usuarioRegistrador", cascade=CascadeType.ALL)
     @JsonManagedReference
     private List<Producto> listaProductosSubidos;
 
     
 
-    @OneToOne(mappedBy="usuario", cascade=CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy="usuario", cascade=CascadeType.ALL)
     @JsonManagedReference
     private PerfilUsario perfilUsuario;
 

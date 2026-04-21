@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -24,8 +26,15 @@ import lombok.Data;
 public class Lista {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "cod_lista")
     private Long codLista;
+
+    @Column(name = "nombre")
+    private String nombre;
+
+    @Column(name = "publicada")
+    private Boolean publicada = false;
 
     @ManyToOne
     @JoinColumn(name = "usuario_duenio_id")
@@ -37,4 +46,10 @@ public class Lista {
 
     @OneToMany(mappedBy = "lista", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ListaProducto> productosEnLista;
+
+    @OneToMany(mappedBy = "lista", cascade = CascadeType.PERSIST)
+    private List<ProductoPropio> productoPropios;
+
+    @Column(name = "codigo", unique = true)
+    private String codigo;
 }

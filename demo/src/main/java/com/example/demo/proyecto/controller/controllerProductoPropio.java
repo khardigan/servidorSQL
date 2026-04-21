@@ -37,4 +37,5 @@ public class controllerProductoPropio {
     public void eliminarProductoPropio(@PathVariable Long id) {
         serviceProductoPropio.eliminarItem(id);
     }
+
 }

@@ -25,10 +25,20 @@ public class ProductoPropio {
     @Column(length = 500)
     private String notas;
 
+    /* id lista, puede estar vacia */
+    @ManyToOne
+    @JoinColumn(name = "lista_id", nullable = true)
+    private Lista lista;
+
+    private String supermercado;
+
+    private Integer cantidad = 1;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    public ProductoPropio() {}
+    public ProductoPropio() {
+    }
 
     public ProductoPropio(Usuario usuario, String nombre, Double precioObjetivo, String notas) {
         this.usuario = usuario;
@@ -38,21 +48,75 @@ public class ProductoPropio {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public Usuario getUsuario() {
+        return usuario;
+    }
 
-    public Double getPrecioObjetivo() { return precioObjetivo; }
-    public void setPrecioObjetivo(Double precioObjetivo) { this.precioObjetivo = precioObjetivo; }
+    public Lista getLista() {
+        return lista;
+    }
 
-    public String getNotas() { return notas; }
-    public void setNotas(String notas) { this.notas = notas; }
+    public void setLista(Lista lista) {
+        this.lista = lista;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public Double getPrecioObjetivo() {
+        return precioObjetivo;
+    }
+
+    public void setPrecioObjetivo(Double precioObjetivo) {
+        this.precioObjetivo = precioObjetivo;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public void setNotas(String notas) {
+        this.notas = notas;
+    }
+
+    public String getSupermercado() {
+        return supermercado;
+    }
+
+    public void setSupermercado(String supermercado) {
+        this.supermercado = supermercado;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(Integer cantidad) {
+        this.cantidad = cantidad;
+    }
 }

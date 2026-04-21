@@ -215,7 +215,10 @@ public class serviceAuthen {
 
     public List<UsuarioDTO> listarUsuariosDTO() {
         List<Usuario> usuarios = repoUsuario.findAll();
-        return usuarios.stream().map(this::convertirAUsuarioDTO).collect(Collectors.toList());
+        return usuarios.stream()
+                .filter(u -> Boolean.TRUE.equals(u.getActivo()))
+                .map(this::convertirAUsuarioDTO)
+                .collect(Collectors.toList());
     }
 
     public AuthResponse login(String nombre, String password) {
@@ -231,6 +234,11 @@ public class serviceAuthen {
 
         if (!passwordEncoder.matches(password, usuario.getContraseña())) {
             System.out.println("Password incorrecta para: " + nombre);
+            return null;
+        }
+
+        if (!Boolean.TRUE.equals(usuario.getActivo())) {
+            System.out.println("Usuario desactivado: " + nombre);
             return null;
         }
 
@@ -293,6 +301,7 @@ public class serviceAuthen {
         usuario.setContraseña(passwordHasheada);
         usuario.setRol(dto.getRol());
         usuario.setFechaRegistro(dto.getFechaRegistro() != null ? dto.getFechaRegistro() : LocalDate.now());
+        usuario.setActivo(true);
 
         // Inicializamos relaciones vacías
         usuario.setListaProductosSubidos(new ArrayList<>());
@@ -316,40 +325,31 @@ public class serviceAuthen {
 
     @Transactional
     public boolean eliminarUsuario(Long id) {
+        System.out.println("DEBUG: Iniciando borrado lógico para usuario ID: " + id);
         Usuario usuario = repoUsuario.findById(id).orElse(null);
-        if (usuario == null)
+        if (usuario == null) {
+            System.out.println("DEBUG: Usuario no encontrado en BD.");
             return false;
-
-        // 1. Quitar al usuario de todas las listas donde es invitado
-        List<com.example.demo.proyecto.model.Lista> listasCompartidas = usuario.getListasCompartidas();
-        if (listasCompartidas != null) {
-            for (com.example.demo.proyecto.model.Lista lista : new ArrayList<>(listasCompartidas)) {
-                lista.getUsuariosCompartida().remove(usuario);
-                repoLista.save(lista);
-            }
         }
 
-        // 2. Eliminar las listas donde el usuario es dueño
-        List<com.example.demo.proyecto.model.Lista> listasCreadas = usuario.getListasCreadas();
-        if (listasCreadas != null) {
-            repoLista.deleteAll(new ArrayList<>(listasCreadas));
-        }
+        System.out.println("DEBUG: Usuario '" + usuario.getNombre() + "' encontrado. Activo antes: " + usuario.getActivo());
 
-        // 3. Eliminar los productos que subió el usuario
-        List<com.example.demo.proyecto.model.Producto> productos = usuario.getListaProductosSubidos();
-        if (productos != null) {
-            repoProducto.deleteAll(new ArrayList<>(productos));
-        }
+        // Borrado lógico: desactivamos al usuario en lugar de borrarlo físicamente
+        usuario.setActivo(false);
+        repoUsuario.save(usuario);
 
-        // 4. Ahora sí, eliminar el usuario limpiamente
-        repoUsuario.deleteById(id);
+        System.out.println("DEBUG: Usuario ID " + id + " guardado con activo = false.");
         return true;
     }
 
     public void eliminarTodosUsuarios() {
-        repoLista.deleteAll(); // borra listas y relaciones
-        repoProducto.deleteAll(); // borra productos
-        repoUsuario.deleteAll(); // borra usuarios
+        System.out.println("DEBUG: Iniciando desactivación masiva de todos los usuarios.");
+        List<Usuario> usuarios = repoUsuario.findAll();
+        for (Usuario u : usuarios) {
+            u.setActivo(false);
+        }
+        repoUsuario.saveAll(usuarios);
+        System.out.println("DEBUG: " + usuarios.size() + " usuarios desactivados.");
     }
 
     public List<Producto> obtenerProductosSubidosPorUsuario(Long id) {
@@ -390,6 +390,7 @@ public class serviceAuthen {
         dto.setEmail(u.getEmail());
         dto.setRol(u.getRol());
         dto.setFechaRegistro(u.getFechaRegistro() != null ? u.getFechaRegistro().toString() : null);
+        dto.setActivo(Boolean.TRUE.equals(u.getActivo()));
 
         dto.setListaProductosSubidos(
                 u.getListaProductosSubidos() != null

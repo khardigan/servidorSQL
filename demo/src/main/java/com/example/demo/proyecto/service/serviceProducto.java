@@ -56,6 +56,7 @@ public class serviceProducto {
                 p1.setCantidad(10);
                 p1.setConfirmado(true); // Los de default los ponemos ya confirmados
                 p1.setUsuarioRegistrador(admin);
+                p1.setSupermercado("Mercadona");
                 productosDefault.add(p1);
 
                 // Producto 2
@@ -67,6 +68,7 @@ public class serviceProducto {
                 p2.setCantidad(15);
                 p2.setConfirmado(true);
                 p2.setUsuarioRegistrador(admin);
+                p2.setSupermercado("MediaMarkt");
                 productosDefault.add(p2);
 
                 // Producto 3
@@ -78,6 +80,7 @@ public class serviceProducto {
                 p3.setCantidad(50);
                 p3.setConfirmado(true);
                 p3.setUsuarioRegistrador(admin);
+                p3.setSupermercado("PC Componentes");
                 productosDefault.add(p3);
 
                 // --- Additional seed products ---
@@ -90,6 +93,7 @@ public class serviceProducto {
                 p4.setCantidad(30);
                 p4.setConfirmado(true);
                 p4.setUsuarioRegistrador(admin);
+                p4.setSupermercado("Apple Store");
                 productosDefault.add(p4);
 
                 // Producto 5
@@ -203,6 +207,7 @@ public class serviceProducto {
         producto.setDescripcion(dto.getDescripcion());
         producto.setPrecio(dto.getPrecio());
         producto.setCantidad(dto.getCantidad());
+        producto.setSupermercado(dto.getSupermercado());
         producto.setUsuarioRegistrador(usuario);
         producto.setConfirmado(false);
 
@@ -217,7 +222,7 @@ public class serviceProducto {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
         }
         Producto p = repoProducto.findById(realId).orElse(null);
-        if (p == null || p.isConfirmado())
+        if (p == null || Boolean.TRUE.equals(p.getConfirmado()))
             throw new RuntimeException("Producto no encontrado o ya confirmado");
 
         p.setConfirmado(true);
@@ -250,6 +255,7 @@ public class serviceProducto {
         producto.setDescripcion(dto.getDescripcion());
         producto.setPrecio(dto.getPrecio());
         producto.setCantidad(dto.getCantidad());
+        producto.setSupermercado(dto.getSupermercado());
         producto.setUsuarioRegistrador(usuario);
 
         Producto actualizado = repoProducto.save(producto);
@@ -279,7 +285,8 @@ public class serviceProducto {
         dto.setPrecio(p.getPrecio());
         dto.setCantidad(p.getCantidad());
         dto.setUsuarioRegistradorId(p.getUsuarioRegistrador() != null ? p.getUsuarioRegistrador().getId() : null);
-        dto.setConfirmado(p.isConfirmado());
+        dto.setConfirmado(Boolean.TRUE.equals(p.getConfirmado()));
+        dto.setSupermercado(p.getSupermercado());
 
         dto.setListas(
                 p.getListas() != null

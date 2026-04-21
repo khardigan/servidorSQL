@@ -8,6 +8,33 @@ public class ListaDetalleDTO {
     private String nombreDuenoNick;
     private List<UsuarioMinimoDTO> usuariosCompartida;
     private List<ProductoEstadoDTO> productos;
+    private List<ProductoPropioDTO> productoPropios;
+    private String nombre;
+    private boolean publicada;
+
+    public List<ProductoPropioDTO> getProductoPropios() {
+        return productoPropios;
+    }
+
+    public void setProductoPropios(List<ProductoPropioDTO> productoPropios) {
+        this.productoPropios = productoPropios;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public boolean isPublicada() {
+        return publicada;
+    }
+
+    public void setPublicada(boolean publicada) {
+        this.publicada = publicada;
+    }
 
     public Long getCodLista() {
         return codLista;
@@ -47,5 +74,15 @@ public class ListaDetalleDTO {
 
     public void setProductos(List<ProductoEstadoDTO> productos) {
         this.productos = productos;
+    }
+
+    private String codigo;
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
     }
 }

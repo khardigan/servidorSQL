@@ -33,8 +33,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/usuarios/login", "/usuarios/registrar").permitAll()
+                        .requestMatchers("/", "/usuarios/login", "/usuarios/registrar").permitAll()
                         .requestMatchers("/productos", "/productos/buscar").permitAll()
+                        .requestMatchers("/listas/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter,
@@ -47,7 +48,7 @@ public class SecurityConfig {
     @Bean
     public InMemoryUserDetailsManager userDetailsService() {
         UserDetails user = User.withUsername("admin")
-                .password(passwordEncoder().encode("1234"))
+                .password(passwordEncoder().encode("admin123"))
                 .roles("ADMIN")
                 .build();
         return new InMemoryUserDetailsManager(user);

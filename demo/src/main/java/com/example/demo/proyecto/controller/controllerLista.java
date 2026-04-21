@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.proyecto.dto.CrearListaRequestDTO;
+import com.example.demo.proyecto.dto.UnirseListaRequestDTO;
 import com.example.demo.proyecto.dto.ListaDTO;
 import com.example.demo.proyecto.dto.ListaDetalleDTO;
 import com.example.demo.proyecto.model.Usuario;
@@ -150,6 +151,118 @@ public class controllerLista {
         return ResponseEntity.noContent().build();
     }
 
+    // ---------------- LISTAR PÚBLICAS ----------------
+    @GetMapping("/publicas")
+    public ResponseEntity<List<ListaDetalleDTO>> listarPublicas() {
+        return ResponseEntity.ok(service.obtenerListasPublicas());
+    }
+
+    // ---------------- PUBLICAR/DESPUBLICAR ----------------
+    @PostMapping("/{id}/publicar")
+    public ResponseEntity<?> publicarLista(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        String rol = jwtService.obtenerRol(token);
+        ListaDTO lista = service.obtenerListaDTO(id);
+        if (lista == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
+
+        if (!rol.equals("ADMIN")
+                && !lista.getUsuarioDuenoId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el dueño o admin pueden publicar esta lista");
+        }
+
+        boolean ok = service.cambiarEstadoPublicacion(id, true);
+        return ok ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    /* Unirse a una lista con código */
+    @PostMapping("/unirse")
+    public ResponseEntity<?> unirseALista(@RequestBody UnirseListaRequestDTO request,
+            @RequestHeader("Authorization") String authHeader) {
+        String codigo = request.getCodigo();
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        Usuario usuarioDestino = encontrarUsuarioPorNombre(nombreUsuario);
+        if (usuarioDestino == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+        }
+
+        try {
+            boolean ok = service.unirseAListaPorCodigo(codigo, usuarioDestino);
+            if (ok) {
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
+            }
+        }
+        // Capturamos errores como "Ya eres el dueño" o "Ya perteneces a esta lista"
+        catch (RuntimeException e) {
+            String msg = e.getMessage();
+
+            if (msg != null && msg.contains("ya pertenece")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Ya perteneces a esta lista");
+            }
+
+            if (msg != null && msg.contains("dueño")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Eres el dueño de esta lista");
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(msg != null ? msg : "Error al unirse a la lista");
+        }
+    }
+
+    @PatchMapping("/{id}/nombre")
+    public ResponseEntity<?> actualizarNombre(@PathVariable Long id, @RequestParam String nuevoNombre,
+            @RequestHeader("Authorization") String authHeader) {
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        String rol = jwtService.obtenerRol(token);
+        ListaDTO lista = service.obtenerListaDTO(id);
+        if (lista == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
+
+        if (!rol.equals("ADMIN")
+                && !lista.getUsuarioDuenoId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Solo el dueño o admin pueden renombrar esta lista");
+        }
+
+        boolean ok = service.actualizarNombre(id, nuevoNombre);
+        return ok ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    // ---------------- CLONAR LISTA ----------------
+    @PostMapping("/{id}/copiar")
+    public ResponseEntity<?> copiarLista(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        Usuario usuarioDestino = encontrarUsuarioPorNombre(nombreUsuario);
+        if (usuarioDestino == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+
+        ListaDTO copia = service.clonarLista(id, usuarioDestino);
+        if (copia == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista original no encontrada");
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(copia);
+    }
+
     @GetMapping("/{id}/usuarios")
     public ResponseEntity<?> obtenerUsuariosDeLista(@PathVariable Long id) {
         ListaDTO l = service.obtenerListaDTO(id);
@@ -194,6 +307,35 @@ public class controllerLista {
 
         try {
             boolean actualizado = service.marcarProductoComoComprado(listaId, productoId, estado, usuario);
+            if (actualizado) {
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado en la lista");
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{listaId}/productos/{productoId}/cantidad")
+    public ResponseEntity<?> cambiarCantidadProducto(
+            @PathVariable Long listaId,
+            @PathVariable Long productoId,
+            @RequestParam int cantidad,
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+        }
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        Usuario usuario = encontrarUsuarioPorNombre(nombreUsuario);
+        if (usuario == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+
+        try {
+            boolean actualizado = service.actualizarCantidadProducto(listaId, productoId, cantidad, usuario);
             if (actualizado) {
                 return ResponseEntity.ok().build();
             } else {

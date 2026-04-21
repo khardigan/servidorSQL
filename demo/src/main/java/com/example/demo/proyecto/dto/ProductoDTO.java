@@ -12,6 +12,7 @@ public class ProductoDTO {
     private Long usuarioRegistradorId;
     private List<Long> listas;
     private boolean confirmado;
+    private String supermercado;
 
     public Long getId() {
         return id;
@@ -75,6 +76,14 @@ public class ProductoDTO {
 
     public void setConfirmado(boolean confirmado) {
         this.confirmado = confirmado;
+    }
+
+    public String getSupermercado() {
+        return supermercado;
+    }
+
+    public void setSupermercado(String supermercado) {
+        this.supermercado = supermercado;
     }
 
 }

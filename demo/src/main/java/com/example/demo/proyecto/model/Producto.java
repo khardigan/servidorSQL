@@ -47,7 +47,8 @@ public class Producto {
     private Double precio;
     @Range(min = 1, max = 1000, message = "Debes comprar minimo 1 y maximo 100 por cada compra")
     private int cantidad;
-    private boolean confirmado;
+    private Boolean confirmado;
+    private String supermercado;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")

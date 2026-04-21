@@ -2,6 +2,7 @@ package com.example.demo.proyecto.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import com.example.demo.proyecto.dto.CrearListaRequestDTO;
 import com.example.demo.proyecto.dto.ListaDTO;
 import com.example.demo.proyecto.dto.ListaDetalleDTO;
 import com.example.demo.proyecto.dto.ProductoEstadoDTO;
+import com.example.demo.proyecto.dto.ProductoPropioDTO;
 import com.example.demo.proyecto.dto.UsuarioMinimoDTO;
 import com.example.demo.proyecto.model.Lista;
 import com.example.demo.proyecto.model.ListaProducto;
@@ -34,6 +36,17 @@ public class serviceLista {
         this.repoProducto = repoProducto;
     }
 
+    private String generarCodigoAleatorio() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder();
+        java.util.Random rnd = new java.util.Random();
+        while (sb.length() < 6) {
+            int index = (int) (rnd.nextFloat() * chars.length());
+            sb.append(chars.charAt(index));
+        }
+        return sb.toString();
+    }
+
     // ---------------- LISTAR ----------------
     public List<ListaDTO> listarListasDTO() {
         return repoLista.findAll().stream().map(this::convertirADTO).collect(Collectors.toList());
@@ -49,11 +62,22 @@ public class serviceLista {
         return convertirADTO(l);
     }
 
+    /**
+     * Busca una lista por su código de invitación (6 caracteres).
+     */
+    public ListaDTO obtenerListaDTO(String codigo) {
+        Lista l = repoLista.findByCodigo(codigo).orElse(null);
+        return l != null ? convertirADTO(l) : null;
+    }
+
     // ---------------- GUARDAR ----------------
     @Transactional
     public ListaDTO guardarLista(CrearListaRequestDTO request, Usuario usuarioDueno) {
         Lista lista = new Lista();
         lista.setUsuarioDueno(usuarioDueno);
+        lista.setNombre(request.getNombre() != null ? request.getNombre() : "Lista de " + usuarioDueno.getNombre());
+        lista.setPublicada(false);
+        lista.setCodigo(generarCodigoAleatorio());
 
         if (request.getProductosEnLista() != null) {
             List<ListaProducto> productos = request.getProductosEnLista().stream()
@@ -88,6 +112,14 @@ public class serviceLista {
         if (lista == null)
             return null;
 
+        if (request.getNombre() != null) {
+            lista.setNombre(request.getNombre());
+        }
+
+        if (request.getNombre() != null) {
+            lista.setNombre(request.getNombre());
+        }
+
         if (request.getProductosEnLista() != null) {
             if (lista.getProductosEnLista() != null) {
                 lista.getProductosEnLista().clear();
@@ -121,6 +153,7 @@ public class serviceLista {
     }
 
     // ---------------- OBTENER MIS LISTAS DETALLE ----------------
+    @Transactional
     public List<ListaDetalleDTO> obtenerMisListasDetalle(Usuario usuario) {
         // Obtenemos todas las listas
         // Esta función filtra las listas generales para devolver solo en las que el
@@ -143,11 +176,20 @@ public class serviceLista {
         // sido comprado.
         ListaDetalleDTO dto = new ListaDetalleDTO();
         dto.setCodLista(l.getCodLista());
-        dto.setUsuarioDuenoId(l.getUsuarioDueno().getId());
+        dto.setUsuarioDuenoId(l.getUsuarioDueno() != null ? l.getUsuarioDueno().getId() : null);
+        dto.setNombre(l.getNombre());
+        dto.setPublicada(Boolean.TRUE.equals(l.getPublicada()));
+
+        // Manejo del código de invitación (Migración perezosa si no existe)
+        if (l.getCodigo() == null) {
+            l.setCodigo(generarCodigoAleatorio());
+            // No hace falta save si estamos en una transacción activa (@Transactional)
+        }
+        dto.setCodigo(l.getCodigo());
 
         // Intentar obtener el nick del perfil, sino el nombre de usuario
-        String nick = l.getUsuarioDueno().getNombre();
-        if (l.getUsuarioDueno().getPerfilUsuario() != null
+        String nick = l.getUsuarioDueno() != null ? l.getUsuarioDueno().getNombre() : "Desconocido";
+        if (l.getUsuarioDueno() != null && l.getUsuarioDueno().getPerfilUsuario() != null
                 && l.getUsuarioDueno().getPerfilUsuario().getNombrePerfil() != null) {
             nick = l.getUsuarioDueno().getPerfilUsuario().getNombrePerfil();
         }
@@ -178,13 +220,23 @@ public class serviceLista {
                 pDto.setId(p.getId());
                 pDto.setNombre(p.getNombre());
                 pDto.setPrecio(p.getPrecio());
-                pDto.setCantidad(p.getCantidad());
-                pDto.setComprado(lp.isComprado());
+                pDto.setCantidad(lp.getCantidad() != null ? lp.getCantidad() : 1);
+                pDto.setComprado(Boolean.TRUE.equals(lp.getComprado()));
                 return pDto;
             }).toList();
             dto.setProductos(prodsDto);
         } else {
             dto.setProductos(new ArrayList<>());
+        }
+
+        // Productos propios asociados a esta lista
+        if (l.getProductoPropios() != null) {
+            List<ProductoPropioDTO> propiosDto = l.getProductoPropios().stream()
+                    .map(this::convertirAProductoPropioDTO)
+                    .collect(Collectors.toList());
+            dto.setProductoPropios(propiosDto);
+        } else {
+            dto.setProductoPropios(new ArrayList<>());
         }
 
         return dto;
@@ -215,6 +267,68 @@ public class serviceLista {
         return lista.getProductosEnLista();
     }
 
+    // ---------------- PUBLICAR / DESPUBLICAR ----------------
+    @Transactional
+    public boolean cambiarEstadoPublicacion(Long id, boolean estado) {
+        Lista l = repoLista.findById(id).orElse(null);
+        if (l == null)
+            return false;
+        l.setPublicada(estado);
+        repoLista.save(l);
+        return true;
+    }
+
+    @Transactional
+    public boolean actualizarNombre(Long id, String nuevoNombre) {
+        Lista l = repoLista.findById(id).orElse(null);
+        if (l == null)
+            return false;
+        l.setNombre(nuevoNombre);
+        repoLista.save(l);
+        return true;
+    }
+
+    // ---------------- LISTAR PÚBLICAS ----------------
+    @Transactional
+    public List<ListaDetalleDTO> obtenerListasPublicas() {
+        return repoLista.findAll().stream()
+                .filter(l -> Boolean.TRUE.equals(l.getPublicada()))
+                .map(this::convertirAListaDetalle)
+                .collect(Collectors.toList());
+    }
+
+    // ---------------- CLONAR LISTA ----------------
+    @Transactional
+    public ListaDTO clonarLista(Long idOriginal, Usuario nuevoDueno) {
+        Lista original = repoLista.findById(idOriginal).orElse(null);
+        if (original == null)
+            return null;
+
+        Lista nueva = new Lista();
+        nueva.setUsuarioDueno(nuevoDueno);
+        nueva.setNombre("Copia de " + (original.getNombre() != null ? original.getNombre() : "Lista"));
+        nueva.setPublicada(false);
+        nueva.setCodigo(generarCodigoAleatorio());
+
+        // Copiamos los productos
+        if (original.getProductosEnLista() != null) {
+            List<ListaProducto> nuevosProds = original.getProductosEnLista().stream()
+                    .map(lp -> {
+                        ListaProducto nLp = new ListaProducto();
+                        nLp.setLista(nueva);
+                        nLp.setProducto(lp.getProducto());
+                        nLp.setComprado(false); // Al clonar, nada está comprado
+                        return nLp;
+                    }).collect(Collectors.toList());
+            nueva.setProductosEnLista(nuevosProds);
+        }
+
+        // No copiamos los usuarios compartidos por defecto al clonar para uno mismo
+
+        Lista guardada = repoLista.save(nueva);
+        return convertirADTO(guardada);
+    }
+
     public Double calcularTotalLista(Long id) {
         Lista lista = buscarListaPorId(id);
         if (lista == null || lista.getProductosEnLista() == null)
@@ -223,7 +337,8 @@ public class serviceLista {
                 .mapToDouble(lp -> {
                     if (lp.getProducto() == null || lp.getProducto().getPrecio() == null)
                         return 0.0;
-                    return lp.getProducto().getPrecio() * lp.getProducto().getCantidad();
+                    int cant = lp.getCantidad() != null ? lp.getCantidad() : 1;
+                    return lp.getProducto().getPrecio() * cant;
                 })
                 .sum();
     }
@@ -260,6 +375,75 @@ public class serviceLista {
         return false;
     }
 
+    // ---------------- ACTUALIZAR CANTIDAD ----------------
+    @Transactional
+    public boolean actualizarCantidadProducto(Long listaId, Long productoId, int cantidad, Usuario usuario) {
+        Lista lista = repoLista.findById(listaId).orElse(null);
+        if (lista == null)
+            throw new RuntimeException("Lista no encontrada");
+
+        // Verificar permisos
+        if (!lista.getUsuarioDueno().getId().equals(usuario.getId()) &&
+                (lista.getUsuariosCompartida() == null || !lista.getUsuariosCompartida().contains(usuario))) {
+            throw new RuntimeException("No tienes permisos para editar esta lista");
+        }
+
+        if (lista.getProductosEnLista() != null) {
+            java.util.Optional<ListaProducto> optLp = lista.getProductosEnLista().stream()
+                    .filter(lp -> lp.getProducto().getId().equals(productoId))
+                    .findFirst();
+
+            if (optLp.isPresent()) {
+                ListaProducto lp = optLp.get();
+                lp.setCantidad(cantidad > 0 ? cantidad : 1);
+                repoLista.save(lista);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Permite a un usuario unirse a una lista compartida mediante su código.
+     * 
+     * @param codigo  Código de 6 caracteres de la lista.
+     * @param usuario Usuario que quiere unirse.
+     * @return true si se unió con éxito, false si no se encontró la lista o ya
+     *         estaba en ella.
+     */
+    @Transactional
+    public boolean unirseAListaPorCodigo(String codigo, Usuario usuario) {
+        Optional<Lista> opt = repoLista.findByCodigo(codigo);
+        System.out.println("DEBUG: Intentando unir usuario " + usuario.getNombre() + " a lista con código " + codigo);
+        if (opt.isEmpty())
+            return false;
+
+        Lista lista = opt.get();
+
+        // Un dueño no puede unirse a su propia lista como invitado
+        if (lista.getUsuarioDueno().getId().equals(usuario.getId())) {
+            throw new RuntimeException("Ya eres el dueño de esta lista");
+        }
+
+        // Inicializar la lista de compartidos si es nula
+        if (lista.getUsuariosCompartida() == null) {
+            lista.setUsuariosCompartida(new ArrayList<>());
+        }
+
+        // Verificar si el usuario ya es integrante de la lista
+        boolean yaEsIntegrante = lista.getUsuariosCompartida().stream()
+                .anyMatch(u -> u.getId().equals(usuario.getId()));
+
+        if (yaEsIntegrante) {
+            throw new RuntimeException("Ya perteneces a esta lista");
+        }
+
+        // Añadir usuario y persistir cambios
+        lista.getUsuariosCompartida().add(usuario);
+        repoLista.save(lista);
+        return true;
+    }
+
     // ---------------- CONVERSIÓN DTO ----------------
     private ListaDTO convertirADTO(Lista l) {
         if (l == null)
@@ -267,10 +451,27 @@ public class serviceLista {
         ListaDTO dto = new ListaDTO();
         dto.setCodLista(l.getCodLista());
         dto.setUsuarioDuenoId(l.getUsuarioDueno() != null ? l.getUsuarioDueno().getId() : null);
+        dto.setNombre(l.getNombre());
+        dto.setPublicada(Boolean.TRUE.equals(l.getPublicada()));
+        dto.setCodigo(l.getCodigo());
         if (l.getProductosEnLista() != null)
             dto.setProductosEnLista(l.getProductosEnLista().stream().map(lp -> lp.getProducto().getId()).toList());
         if (l.getUsuariosCompartida() != null)
             dto.setUsuariosCompartida(l.getUsuariosCompartida().stream().map(Usuario::getId).toList());
+        return dto;
+    }
+
+    private com.example.demo.proyecto.dto.ProductoPropioDTO convertirAProductoPropioDTO(
+            com.example.demo.proyecto.model.ProductoPropio pp) {
+        com.example.demo.proyecto.dto.ProductoPropioDTO dto = new com.example.demo.proyecto.dto.ProductoPropioDTO();
+        dto.setId(pp.getId());
+        dto.setNombre(pp.getNombre());
+        dto.setPrecioObjetivo(pp.getPrecioObjetivo());
+        dto.setNotas(pp.getNotas());
+        dto.setSupermercado(pp.getSupermercado());
+        dto.setListaId(pp.getLista() != null ? pp.getLista().getCodLista() : null);
+        dto.setCantidad(pp.getCantidad() != null ? pp.getCantidad() : 1);
+        dto.setCreatedAt(pp.getCreatedAt());
         return dto;
     }
 }

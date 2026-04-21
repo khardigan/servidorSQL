@@ -23,5 +23,7 @@ public class ListaProducto {
     @JsonBackReference(value = "lista-producto-producto")
     private Producto producto;
 
-    private boolean comprado;
+    private Boolean comprado;
+
+    private Integer cantidad = 1;
 }
