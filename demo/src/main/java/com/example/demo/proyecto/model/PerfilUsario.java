@@ -37,6 +37,24 @@ public class PerfilUsario {
     @Length(max=200, message="El maximo de caracteres es 200")
     private String descripcion;
 
+    @Column(name="subtitulo")
+    private String subtitulo;
+
+    @Column(name="fecha_nacimiento")
+    private String fechaNacimiento;
+
+    @Column(name="edad")
+    private String edad;
+
+    @Column(name="residencia")
+    private String residencia;
+
+    @Column(name="email")
+    private String email;
+
+    @Column(name="telefono")
+    private String telefono;
+
     @OneToOne
     @JoinColumn(name="usuario_id")
     @JsonBackReference

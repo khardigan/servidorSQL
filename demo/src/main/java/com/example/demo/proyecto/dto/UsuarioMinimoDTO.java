@@ -1,5 +1,6 @@
 package com.example.demo.proyecto.dto;
 
+// DTO de salida con información mínima (ID y Nick) de un usuario.
 public class UsuarioMinimoDTO {
     private Long id;
     private String nick;

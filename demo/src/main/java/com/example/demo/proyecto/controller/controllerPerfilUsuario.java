@@ -27,11 +27,14 @@ public class controllerPerfilUsuario {
         this.serviceJWT = serviceJWT;
     }
 
+    // ----------------- LISTAR PERFILES -----------------
+    // Devuelve la lista de todos los perfiles.
     @GetMapping
     public ResponseEntity<List<PerfilUsuarioDTO>> listar() {
         return ResponseEntity.ok(service.listarPerfilesDTO());
     }
 
+    // Te da el perfil del usuario. (Tiene que recibir el ID y el Token)
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Integer id, @RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
@@ -47,13 +50,14 @@ public class controllerPerfilUsuario {
         Long idToken = serviceJWT.obtenerId(token);
         String rol = serviceJWT.obtenerRol(token);
 
-        if (!rol.equals("ADMIN") && !idToken.equals(perfil.getUsuarioId())) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(perfil.getUsuarioId())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No tienes permisos para ver este perfil");
         }
 
         return ResponseEntity.ok(perfil);
     }
 
+    // Te crea un perfil. (Tiene que recibir el Token y el Perfil)
     @PostMapping
     public ResponseEntity<?> crear(
             @Valid @RequestBody CrearPerfilRequestDTO perfilDTO,
@@ -71,7 +75,7 @@ public class controllerPerfilUsuario {
         String rol = serviceJWT.obtenerRol(token);
 
         // 3️⃣ Verificar permisos: ADMIN o el propio usuario
-        if (!rol.equals("ADMIN") && !idToken.equals(perfilDTO.getUsuarioId())) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(perfilDTO.getUsuarioId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("No puedes crear un perfil para otro usuario");
         }
@@ -86,6 +90,7 @@ public class controllerPerfilUsuario {
         }
     }
 
+    // Te actualiza el perfil. (Tiene que recibir el ID y el Token)
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Integer id,
@@ -106,7 +111,7 @@ public class controllerPerfilUsuario {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
         }
 
-        if (!rol.equals("ADMIN") && !idToken.equals(perfilExistente.getUsuarioId())) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(perfilExistente.getUsuarioId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("No tienes permisos para actualizar este perfil");
         }
@@ -115,6 +120,7 @@ public class controllerPerfilUsuario {
         return ResponseEntity.ok(actualizado);
     }
 
+    // Te elimina el perfil. (Tiene que recibir el ID y el Token)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(
             @PathVariable Integer id,
@@ -133,7 +139,7 @@ public class controllerPerfilUsuario {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
         }
 
-        if (!rol.equals("ADMIN") && !idToken.equals(perfilExistente.getUsuarioId())) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(perfilExistente.getUsuarioId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("No tienes permisos para eliminar este perfil");
         }
@@ -145,6 +151,7 @@ public class controllerPerfilUsuario {
         return ResponseEntity.noContent().build();
     }
 
+    // Te da el usuario del perfil. (Tiene que recibir el ID)
     @GetMapping("/{id}/usuario")
     public ResponseEntity<?> obtenerUsuarioDelPerfil(@PathVariable Integer id) {
         PerfilUsario p = service.buscarPerfilPorId(id);

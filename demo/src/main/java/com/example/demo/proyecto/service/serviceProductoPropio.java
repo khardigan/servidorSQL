@@ -25,6 +25,7 @@ public class serviceProductoPropio {
         this.repoLista = repoLista;
     }
 
+    // Te da la lista de productos propios de un usuario.
     public List<ProductoPropioDTO> obtenerLista(Long usuarioId) {
         List<ProductoPropio> productos = repoProductoPropio.findByUsuarioId(usuarioId);
         return productos.stream()
@@ -32,6 +33,7 @@ public class serviceProductoPropio {
                 .collect(Collectors.toList());
     }
 
+    // Crea un producto nuevo dentro de una lista.
     public ProductoPropioDTO crearItem(Long usuarioId, CrearProductoPropioDTO dto) {
         Usuario usuario = repoUsuario.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -43,6 +45,7 @@ public class serviceProductoPropio {
         producto.setNotas(dto.getNotas());
         producto.setSupermercado(dto.getSupermercado());
         producto.setCantidad(dto.getCantidad() != null ? dto.getCantidad() : 1);
+        producto.setComprado(dto.getComprado() != null ? dto.getComprado() : false);
 
         // Asociar con lista si se proporciona el ID
         if (dto.getListaId() != null) {
@@ -54,6 +57,7 @@ public class serviceProductoPropio {
     }
 
     @SuppressWarnings("null")
+    // Actualiza los datos de un producto propio.
     public ProductoPropioDTO actualizarItem(Long id, CrearProductoPropioDTO dto) {
         ProductoPropio producto = repoProductoPropio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -74,14 +78,20 @@ public class serviceProductoPropio {
             producto.setCantidad(dto.getCantidad());
         }
 
+        if (dto.getComprado() != null) {
+            producto.setComprado(dto.getComprado());
+        }
+
         ProductoPropio actualizado = repoProductoPropio.save(producto);
         return convertirADTO(actualizado);
     }
 
+    // Elimina un producto propio del sistema.
     public void eliminarItem(Long id) {
         repoProductoPropio.deleteById(id);
     }
 
+    // Pasa el producto del modelo a formato DTO.
     private ProductoPropioDTO convertirADTO(ProductoPropio producto) {
         ProductoPropioDTO dto = new ProductoPropioDTO();
         dto.setId(producto.getId());
@@ -90,6 +100,8 @@ public class serviceProductoPropio {
         dto.setNotas(producto.getNotas());
         dto.setSupermercado(producto.getSupermercado());
         dto.setCantidad(producto.getCantidad());
+        dto.setComprado(producto.getComprado());
+        dto.setUsuarioId(producto.getUsuario().getId()); // Quien lo creó
         dto.setListaId(producto.getLista() != null ? producto.getLista().getCodLista() : null);
         dto.setCreatedAt(producto.getCreatedAt());
         return dto;

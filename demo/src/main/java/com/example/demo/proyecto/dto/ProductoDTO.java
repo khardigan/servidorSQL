@@ -2,6 +2,7 @@ package com.example.demo.proyecto.dto;
 
 import java.util.List;
 
+// DTO de salida con los datos detallados de un producto.
 public class ProductoDTO {
 
     private Long id;

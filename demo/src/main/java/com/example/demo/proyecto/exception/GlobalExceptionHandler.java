@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+// Maneja las excepciones globales.
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

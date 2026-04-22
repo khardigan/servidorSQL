@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+// DTO de salida que devuelve el token y los datos del usuario al loguearse.
 public class AuthResponse {
     // este el token jwt que se le envia al cliente
     private String token;

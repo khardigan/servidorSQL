@@ -16,23 +16,27 @@ public class controllerProductoPropio {
         this.serviceProductoPropio = serviceProductoPropio;
     }
 
+    // Te da los productos propios del usuario. (Tiene que recibir el Token y el ID)
     @GetMapping("/{usuarioId}")
     public List<ProductoPropioDTO> obtenerProductosPropios(@PathVariable Long usuarioId) {
         return serviceProductoPropio.obtenerLista(usuarioId);
     }
 
+    // Crea un producto propio. (Tiene que recibir el Token y el ID)
     @PostMapping("/{usuarioId}")
     public ProductoPropioDTO crearProductoPropio(@PathVariable Long usuarioId,
             @RequestBody CrearProductoPropioDTO dto) {
         return serviceProductoPropio.crearItem(usuarioId, dto);
     }
 
+    // Actualiza un producto propio. (Tiene que recibir el Token y el ID)
     @PutMapping("/{id}")
     public ProductoPropioDTO actualizarProductoPropio(@PathVariable Long id,
             @RequestBody CrearProductoPropioDTO dto) {
         return serviceProductoPropio.actualizarItem(id, dto);
     }
 
+    // Elimina un producto propio. (Tiene que recibir el Token y el ID)
     @DeleteMapping("/{id}")
     public void eliminarProductoPropio(@PathVariable Long id) {
         serviceProductoPropio.eliminarItem(id);

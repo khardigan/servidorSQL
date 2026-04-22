@@ -213,6 +213,7 @@ public class serviceAuthen {
 
     // ----------------- CRUD Usuarios -----------------
 
+    // Devuelve la lista de todos los usuarios activos en formato DTO.
     public List<UsuarioDTO> listarUsuariosDTO() {
         List<Usuario> usuarios = repoUsuario.findAll();
         return usuarios.stream()
@@ -221,6 +222,7 @@ public class serviceAuthen {
                 .collect(Collectors.toList());
     }
 
+    // Comprueba el usuario y la contraseña para dejarle entrar.
     public AuthResponse login(String nombre, String password) {
         Usuario usuario = repoUsuario.findAll().stream()
                 .filter(u -> u.getNombre().equalsIgnoreCase(nombre))
@@ -247,11 +249,13 @@ public class serviceAuthen {
         return AuthResponse.builder().token(token).nombre(nombre).rol(usuario.getRol()).id(usuario.getId()).build();
     }
 
+    // Te da la información de un usuario por su ID.
     public UsuarioDTO obtenerUsuarioDTO(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return convertirAUsuarioDTO(u);
     }
 
+    // Guarda un usuario nuevo cifrando su contraseña.
     public Usuario guardarUsuario(Usuario usuario) {
         if (usuario.getNombre() != null) {
             boolean existe = repoUsuario.findAll().stream()
@@ -284,6 +288,7 @@ public class serviceAuthen {
     // Aqui cogemos y creamos a partir del json un usuario dto y luego lo pasamos a
     // usuario origina
     @Transactional
+    // Registra un usuario nuevo desde los datos del formulario.
     public AuthResponse crearUsuarioDesdeDTO(CrearUsuarioRequestDTO dto) {
         // Validación de duplicados
         boolean existe = repoUsuario.findAll().stream()
@@ -318,11 +323,13 @@ public class serviceAuthen {
                 .build();
     }
 
+    // Actualiza los datos de un usuario.
     public Usuario actualizarUsuario(Long id, Usuario datos) {
         datos.setId(id);
         return repoUsuario.save(datos);
     }
 
+    // Desactiva un usuario (borrado lógico) por su ID.
     @Transactional
     public boolean eliminarUsuario(Long id) {
         System.out.println("DEBUG: Iniciando borrado lógico para usuario ID: " + id);
@@ -342,6 +349,7 @@ public class serviceAuthen {
         return true;
     }
 
+    // Desactiva a todos los usuarios del sistema.
     public void eliminarTodosUsuarios() {
         System.out.println("DEBUG: Iniciando desactivación masiva de todos los usuarios.");
         List<Usuario> usuarios = repoUsuario.findAll();
@@ -352,6 +360,7 @@ public class serviceAuthen {
         System.out.println("DEBUG: " + usuarios.size() + " usuarios desactivados.");
     }
 
+    // Te da los productos que ha subido un usuario específico.
     public List<Producto> obtenerProductosSubidosPorUsuario(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return u == null ? new ArrayList<>() : u.getListaProductosSubidos();
@@ -374,12 +383,14 @@ public class serviceAuthen {
         repoUsuario.save(usuario);
     }
 
+    // Crea un nuevo token con los mismos datos del usuario.
     public AuthResponse renovarToken(String nombre, String rol, Long id) {
         String token = jwtService.generarToken(nombre, rol, id);
         return AuthResponse.builder().token(token).nombre(nombre).rol(rol).id(id).build();
     }
 
     // ----------------- Conversión a DTO -----------------
+    // Pasa los datos del usuario del modelo al formato DTO.
     public UsuarioDTO convertirAUsuarioDTO(Usuario u) {
         if (u == null)
             return null;

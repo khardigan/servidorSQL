@@ -61,15 +61,13 @@ public class controllerLista {
 
     @GetMapping("/mis-listas")
     public ResponseEntity<?> obtenerMisListas(@RequestHeader("Authorization") String authHeader) {
-        // Endpoint que devuelve las listas asociadas al usuario autenticado, con todos
-        // sus detalles integrados (dueño, integrantes y productos).
         String token = jwtService.limpiarToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuario = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuario = repoUsuario.findById(usuarioId).orElse(null);
         if (usuario == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
@@ -140,8 +138,9 @@ public class controllerLista {
         if (lista == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
 
-        if (!rol.equals("ADMIN")) {
-            if (!lista.getUsuarioDuenoId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId()))
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
+            Long userId = jwtService.obtenerId(token);
+            if (userId == null || !lista.getUsuarioDuenoId().equals(userId))
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Solo el dueño o admin pueden eliminar esta lista");
         }
@@ -170,12 +169,40 @@ public class controllerLista {
         if (lista == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
 
-        if (!rol.equals("ADMIN")
-                && !lista.getUsuarioDuenoId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el dueño o admin pueden publicar esta lista");
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
+            Long userId = jwtService.obtenerId(token);
+            if (userId == null || !lista.getUsuarioDuenoId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Solo el dueño o admin pueden publicar esta lista");
+            }
         }
 
         boolean ok = service.cambiarEstadoPublicacion(id, true);
+        return ok ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/{id}/despublicar")
+    public ResponseEntity<?> despublicarLista(@PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        String token = jwtService.limpiarToken(authHeader);
+        if (token == null || !jwtService.esTokenValido(token))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
+
+        String nombreUsuario = jwtService.obtenerSubject(token);
+        String rol = jwtService.obtenerRol(token);
+        ListaDTO lista = service.obtenerListaDTO(id);
+        if (lista == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
+
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
+            Long userId = jwtService.obtenerId(token);
+            if (userId == null || !lista.getUsuarioDuenoId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Solo el dueño o admin pueden despublicar esta lista");
+            }
+        }
+
+        boolean ok = service.cambiarEstadoPublicacion(id, false);
         return ok ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
@@ -234,10 +261,12 @@ public class controllerLista {
         if (lista == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
 
-        if (!rol.equals("ADMIN")
-                && !lista.getUsuarioDuenoId().equals(encontrarUsuarioPorNombre(nombreUsuario).getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Solo el dueño o admin pueden renombrar esta lista");
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
+            Long userId = jwtService.obtenerId(token);
+            if (userId == null || !lista.getUsuarioDuenoId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Solo el dueño o admin pueden renombrar esta lista");
+            }
         }
 
         boolean ok = service.actualizarNombre(id, nuevoNombre);

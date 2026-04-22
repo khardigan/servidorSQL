@@ -34,6 +34,8 @@ public class ProductoPropio {
 
     private Integer cantidad = 1;
 
+    private Boolean comprado = false;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -118,5 +120,13 @@ public class ProductoPropio {
 
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
+    }
+
+    public Boolean getComprado() {
+        return comprado;
+    }
+
+    public void setComprado(Boolean comprado) {
+        this.comprado = comprado;
     }
 }

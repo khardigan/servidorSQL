@@ -1,5 +1,6 @@
 package com.example.demo.proyecto.dto;
 
+// DTO de salida para mostrar el estado (comprado o no) de un producto en la lista.
 public class ProductoEstadoDTO {
     private Long id;
     private String nombre;

@@ -1,12 +1,12 @@
 package com.example.demo.proyecto.dto;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.Range;
 
+// DTO de entrada para crear un producto. Tiene que recibir nombre, descripción, precio, cantidad y supermercado.
 public class CrearProductoDTO {
 
     @NotBlank(message = "El nombre no puede estar vacío")
@@ -65,8 +65,4 @@ public class CrearProductoDTO {
     public void setSupermercado(String supermercado) {
         this.supermercado = supermercado;
     }
-    
-
-
-
 }

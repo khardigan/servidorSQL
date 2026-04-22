@@ -414,14 +414,36 @@
                 }
                 console.log(lista.usuarioDueno.listaProductosSubidos)
                 if (lista.productosEnLista && lista.productosEnLista.length > 0) {
+                    // Ordenar productos: pendientes primero
+                    const productosOrdenados = [...lista.productosEnLista].sort((a, b) => {
+                        const aPendiente = !a.comprado;
+                        const bPendiente = !b.comprado;
+                        if (aPendiente !== bPendiente) {
+                            return aPendiente ? -1 : 1;
+                        }
+                        return 0;
+                    });
+
                     html += '<div class="productos-list"><strong style="color: #667eea;"> Productos en esta lista:</strong>';
-                    for (const producto of lista.productosEnLista) {
+                    for (const producto of productosOrdenados) {
                         if(producto.nombre==null){
                             console.log("no hay productos");
                         }else{
+                            const esPendiente = !producto.comprado;
+                            const colorBorde = esPendiente ? "#22c55e" : "#e5e7eb";
+                            const colorBg = esPendiente ? "#f0fdf4" : "transparent";
+                            const badgeHTML = esPendiente ? '<span style="display: inline-block; background: #22c55e; color: white; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: bold; margin-left: 0.5rem;">PENDIENTE</span>' : '';
+                            
                             html += `
-                            <div class="producto-item">
-                                <div class="producto-nombre">${producto.nombre}</div>
+                            <div class="producto-item" style="
+                                border-left: 4px solid ${colorBorde};
+                                padding-left: 0.75rem;
+                                ${esPendiente ? 'background: ' + colorBg + '; border-radius: 4px; padding: 0.75rem;' : ''}
+                            ">
+                                <div class="producto-nombre" style="color: ${esPendiente ? '#16a34a' : '#374151'}; display: flex; align-items: center; justify-content: space-between;">
+                                    <span>${producto.nombre}</span>
+                                    ${badgeHTML}
+                                </div>
                                 <div class="producto-desc">${producto.descripcion}</div>
                                 <div class="producto-precio"> $${producto.precio || '0.00'} - Cantidad: ${producto.cantidad || 0}</div>
                                 <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.25rem;">📤 Subido por: ${producto.usuarioRegistrador?.nombre || 'Desconocido'}</div>

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 
+// DTO de entrada para registrar un usuario nuevo. Tiene que recibir nombre, email, contraseña y rol.
 public class CrearUsuarioRequestDTO {
 
     @NotBlank(message = "El nombre de usuario no puede estar vacío")

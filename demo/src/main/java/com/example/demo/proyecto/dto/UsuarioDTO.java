@@ -2,6 +2,7 @@ package com.example.demo.proyecto.dto;
 
 import java.util.List;
 
+// DTO de salida con la información detallada de un usuario.
 public class UsuarioDTO {
     private Long id;
     private String nombre;

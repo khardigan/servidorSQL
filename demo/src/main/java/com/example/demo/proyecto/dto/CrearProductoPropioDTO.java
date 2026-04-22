@@ -2,6 +2,7 @@ package com.example.demo.proyecto.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+// DTO de entrada para añadir un producto personalizado a una lista. Tiene que recibir nombre, precio y cantidad.
 public class CrearProductoPropioDTO {
 
     @NotBlank(message = "El nombre no puede estar vacío")
@@ -54,6 +55,16 @@ public class CrearProductoPropioDTO {
     }
 
     private Integer cantidad;
+
+    private Boolean comprado;
+
+    public Boolean getComprado() {
+        return comprado;
+    }
+
+    public void setComprado(Boolean comprado) {
+        this.comprado = comprado;
+    }
 
     public Integer getCantidad() {
         return cantidad;

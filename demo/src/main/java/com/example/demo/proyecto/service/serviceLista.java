@@ -36,6 +36,7 @@ public class serviceLista {
         this.repoProducto = repoProducto;
     }
 
+    // Crea un código de 6 letras y números al azar.
     private String generarCodigoAleatorio() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();
@@ -48,15 +49,18 @@ public class serviceLista {
     }
 
     // ---------------- LISTAR ----------------
+    // Devuelve todas las listas que hay en el sistema.
     public List<ListaDTO> listarListasDTO() {
         return repoLista.findAll().stream().map(this::convertirADTO).collect(Collectors.toList());
     }
 
     // ---------------- BUSCAR ----------------
+    // Busca una lista por su clave interna (ID).
     public Lista buscarListaPorId(Long id) {
         return repoLista.findById(id).orElse(null);
     }
 
+    // Te da los datos de una lista en formato DTO.
     public ListaDTO obtenerListaDTO(Long id) {
         Lista l = buscarListaPorId(id);
         return convertirADTO(l);
@@ -72,6 +76,7 @@ public class serviceLista {
 
     // ---------------- GUARDAR ----------------
     @Transactional
+    // Crea una lista nueva y le asigna un dueño.
     public ListaDTO guardarLista(CrearListaRequestDTO request, Usuario usuarioDueno) {
         Lista lista = new Lista();
         lista.setUsuarioDueno(usuarioDueno);
@@ -107,6 +112,7 @@ public class serviceLista {
 
     // ---------------- ACTUALIZAR ----------------
     @Transactional
+    // Cambia los datos (nombre, productos, integrantes) de una lista.
     public ListaDTO actualizarLista(Long id, CrearListaRequestDTO request) {
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null)
@@ -154,6 +160,7 @@ public class serviceLista {
 
     // ---------------- OBTENER MIS LISTAS DETALLE ----------------
     @Transactional
+    // Te da el detalle de todas las listas donde tú participas.
     public List<ListaDetalleDTO> obtenerMisListasDetalle(Usuario usuario) {
         // Obtenemos todas las listas
         // Esta función filtra las listas generales para devolver solo en las que el
@@ -163,12 +170,14 @@ public class serviceLista {
         // Filtramos las que son del usuario o en las que está compartido
         List<Lista> misListas = todasListas.stream()
                 .filter(l -> l.getUsuarioDueno().getId().equals(usuario.getId()) ||
-                        (l.getUsuariosCompartida() != null && l.getUsuariosCompartida().contains(usuario)))
+                        (l.getUsuariosCompartida() != null && l.getUsuariosCompartida().stream()
+                                .anyMatch(u -> u.getId().equals(usuario.getId()))))
                 .toList();
 
         return misListas.stream().map(this::convertirAListaDetalle).collect(Collectors.toList());
     }
 
+    // Pasa una lista a un formato con mucho detalle (dueño, productos, etc).
     private ListaDetalleDTO convertirAListaDetalle(Lista l) {
         // Mapea la entidad Lista a un DTO estructurado que junta el perfil del dueño,
         // los integrantes con sus alias ("nick")
@@ -244,6 +253,7 @@ public class serviceLista {
 
     // ---------------- ELIMINAR ----------------
     @Transactional
+    // Borra una lista por completo por su ID.
     public boolean eliminarLista(Long id) {
         if (repoLista.existsById(id)) {
             repoLista.deleteById(id);
@@ -253,6 +263,7 @@ public class serviceLista {
     }
 
     // ---------------- OBTENER USUARIOS ----------------
+    // Te dice qué personas están invitadas a una lista.
     public List<Usuario> obtenerUsuariosDeLista(Long id) {
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null)
@@ -260,6 +271,7 @@ public class serviceLista {
         return lista.getUsuariosCompartida();
     }
 
+    // Te dice qué productos hay guardados en una lista.
     public List<ListaProducto> obtenerProductosDeLista(Long id) {
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null)
@@ -269,6 +281,7 @@ public class serviceLista {
 
     // ---------------- PUBLICAR / DESPUBLICAR ----------------
     @Transactional
+    // Hace que una lista sea pública o privada.
     public boolean cambiarEstadoPublicacion(Long id, boolean estado) {
         Lista l = repoLista.findById(id).orElse(null);
         if (l == null)
@@ -279,6 +292,7 @@ public class serviceLista {
     }
 
     @Transactional
+    // Cambia el nombre de la lista.
     public boolean actualizarNombre(Long id, String nuevoNombre) {
         Lista l = repoLista.findById(id).orElse(null);
         if (l == null)
@@ -290,6 +304,7 @@ public class serviceLista {
 
     // ---------------- LISTAR PÚBLICAS ----------------
     @Transactional
+    // Te da todas las listas que la gente ha hecho públicas.
     public List<ListaDetalleDTO> obtenerListasPublicas() {
         return repoLista.findAll().stream()
                 .filter(l -> Boolean.TRUE.equals(l.getPublicada()))
@@ -299,6 +314,7 @@ public class serviceLista {
 
     // ---------------- CLONAR LISTA ----------------
     @Transactional
+    // Hace una copia de una lista para otro usuario.
     public ListaDTO clonarLista(Long idOriginal, Usuario nuevoDueno) {
         Lista original = repoLista.findById(idOriginal).orElse(null);
         if (original == null)
@@ -329,6 +345,7 @@ public class serviceLista {
         return convertirADTO(guardada);
     }
 
+    // Suma el precio de todos los productos de la lista.
     public Double calcularTotalLista(Long id) {
         Lista lista = buscarListaPorId(id);
         if (lista == null || lista.getProductosEnLista() == null)
@@ -345,6 +362,7 @@ public class serviceLista {
 
     // ---------------- MARCAR COMPRADO ----------------
     @Transactional
+    // Marca si ya has echado un producto al carro.
     public boolean marcarProductoComoComprado(Long listaId, Long productoId, boolean estado, Usuario usuario) {
         // Recupera la lista, comprueba que el usuario pertenezca a ella y luego busca y
         // actualiza
@@ -377,6 +395,7 @@ public class serviceLista {
 
     // ---------------- ACTUALIZAR CANTIDAD ----------------
     @Transactional
+    // Cambia cuántas unidades quieres de un producto.
     public boolean actualizarCantidadProducto(Long listaId, Long productoId, int cantidad, Usuario usuario) {
         Lista lista = repoLista.findById(listaId).orElse(null);
         if (lista == null)
@@ -412,6 +431,7 @@ public class serviceLista {
      *         estaba en ella.
      */
     @Transactional
+    // Te permite entrar en una lista si tienes el código de 6 letras.
     public boolean unirseAListaPorCodigo(String codigo, Usuario usuario) {
         Optional<Lista> opt = repoLista.findByCodigo(codigo);
         System.out.println("DEBUG: Intentando unir usuario " + usuario.getNombre() + " a lista con código " + codigo);
@@ -445,6 +465,7 @@ public class serviceLista {
     }
 
     // ---------------- CONVERSIÓN DTO ----------------
+    // Pasa una lista del modelo al formato DTO básico.
     private ListaDTO convertirADTO(Lista l) {
         if (l == null)
             return null;
@@ -461,6 +482,7 @@ public class serviceLista {
         return dto;
     }
 
+    // Pasa un producto inventado al formato DTO.
     private com.example.demo.proyecto.dto.ProductoPropioDTO convertirAProductoPropioDTO(
             com.example.demo.proyecto.model.ProductoPropio pp) {
         com.example.demo.proyecto.dto.ProductoPropioDTO dto = new com.example.demo.proyecto.dto.ProductoPropioDTO();
@@ -471,6 +493,8 @@ public class serviceLista {
         dto.setSupermercado(pp.getSupermercado());
         dto.setListaId(pp.getLista() != null ? pp.getLista().getCodLista() : null);
         dto.setCantidad(pp.getCantidad() != null ? pp.getCantidad() : 1);
+        dto.setComprado(pp.getComprado()); // Estado de comprado
+        dto.setUsuarioId(pp.getUsuario() != null ? pp.getUsuario().getId() : null); // Dueño del producto
         dto.setCreatedAt(pp.getCreatedAt());
         return dto;
     }

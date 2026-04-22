@@ -2,6 +2,7 @@ package com.example.demo.proyecto.dto;
 
 import java.time.LocalDateTime;
 
+// DTO de salida con la información de un producto propio del usuario.
 public class ProductoPropioDTO {
     private Long id;
     private String nombre;
@@ -10,6 +11,8 @@ public class ProductoPropioDTO {
     private Long listaId;
     private String supermercado;
     private Integer cantidad;
+    private Boolean comprado;
+    private Long usuarioId; // ID del usuario dueño del producto
     private LocalDateTime createdAt;
 
     // Getters y Setters
@@ -19,6 +22,14 @@ public class ProductoPropioDTO {
 
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
+    }
+
+    public Boolean getComprado() {
+        return comprado;
+    }
+
+    public void setComprado(Boolean comprado) {
+        this.comprado = comprado;
     }
 
     public Long getId() {
@@ -75,5 +86,13 @@ public class ProductoPropioDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void setUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
     }
 }

@@ -34,6 +34,7 @@ public class serviceProducto {
     }
 
     @PostConstruct
+    // Crea productos de prueba si la base de datos está vacía.
     public void init() {
         // 1. Verificamos si ya hay productos para no duplicarlos cada vez que reinicies
         if (repoProducto.count() == 0) {
@@ -181,26 +182,48 @@ public class serviceProducto {
 
     // ---------------- Listar ----------------
 
+    // Devuelve todos los productos del catálogo.
     public List<ProductoDTO> listarProductosDTO() {
         return repoProducto.findAll()
                 .stream()
                 .map(this::convertirAProductoDTO)
+                .sorted((a, b) -> {
+                    // Productos pendientes (confirmado = false) primero
+                    boolean aEsPendiente = !a.isConfirmado();
+                    boolean bEsPendiente = !b.isConfirmado();
+                    if (aEsPendiente != bEsPendiente) {
+                        return aEsPendiente ? -1 : 1;
+                    }
+                    return 0;
+                })
                 .collect(Collectors.toList());
     }
 
+    // Busca productos por nombre ignorando mayúsculas.
     public List<ProductoDTO> buscarProductosDTO(String nombre) {
         return repoProducto.findByNombreContainingIgnoreCase(nombre)
                 .stream()
                 .map(this::convertirAProductoDTO)
+                .sorted((a, b) -> {
+                    // Productos pendientes (confirmado = false) primero
+                    boolean aEsPendiente = !a.isConfirmado();
+                    boolean bEsPendiente = !b.isConfirmado();
+                    if (aEsPendiente != bEsPendiente) {
+                        return aEsPendiente ? -1 : 1;
+                    }
+                    return 0;
+                })
                 .collect(Collectors.toList());
     }
 
+    // Te da la información de un producto por su ID.
     public ProductoDTO obtenerProductoDTO(Long id) {
         Producto p = repoProducto.findById(id).orElse(null);
         return convertirAProductoDTO(p);
     }
 
     // ---------------- Guardar ----------------
+    // Guarda un producto pendiente de confirmar por un admin.
     public ProductoDTO guardarProductoTemporal(CrearProductoDTO dto, Usuario usuario) {
         Producto producto = new Producto();
         producto.setNombre(dto.getNombre());
@@ -217,6 +240,7 @@ public class serviceProducto {
     }
 
     // Confirmar producto
+    // Marca un producto como confirmado (solo para administradores).
     public ProductoDTO confirmarProducto(Long realId, Usuario admin) {
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
@@ -231,6 +255,7 @@ public class serviceProducto {
     }
 
     // Rechazar producto
+    // Borra un producto que no ha sido aceptado (solo para administradores).
     public boolean rechazarProducto(Long realId, Usuario admin) {
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para rechazar este producto");
@@ -244,6 +269,7 @@ public class serviceProducto {
 
     // ---------------- Actualizar ----------------
 
+    // Cambia los datos de un producto existente.
     @Transactional
     public ProductoDTO actualizarProducto(Long id, CrearProductoDTO dto, Usuario usuario) {
         Producto producto = repoProducto.findById(id).orElse(null);
@@ -264,6 +290,7 @@ public class serviceProducto {
 
     // ---------------- Eliminar ----------------
 
+    // Borra un producto del catálogo por su ID.
     public boolean eliminarProducto(Long id) {
         if (repoProducto.existsById(id)) {
             repoProducto.deleteById(id);
@@ -274,6 +301,7 @@ public class serviceProducto {
 
     // ---------------- Conversión a DTO ----------------
 
+    // Pasa el producto del modelo a formato DTO.
     private ProductoDTO convertirAProductoDTO(Producto p) {
         if (p == null)
             return null;

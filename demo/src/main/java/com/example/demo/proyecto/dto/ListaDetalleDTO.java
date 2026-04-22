@@ -2,6 +2,7 @@ package com.example.demo.proyecto.dto;
 
 import java.util.List;
 
+// DTO de salida con toda la información detallada de una lista (usuarios compartidos y productos).
 public class ListaDetalleDTO {
     private Long codLista;
     private Long usuarioDuenoId;

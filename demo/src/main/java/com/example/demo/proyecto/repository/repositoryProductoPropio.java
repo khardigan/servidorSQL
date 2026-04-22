@@ -7,8 +7,9 @@ import com.example.demo.proyecto.model.ProductoPropio;
 
 @Repository
 public interface repositoryProductoPropio extends JpaRepository<ProductoPropio, Long> {
-    
+    // Busca productos por nombre, ignorando mayúsculas y minúsculas.
     List<ProductoPropio> findByNombreContainingIgnoreCase(String nombre);
 
+    // Busca productos por usuario.
     List<ProductoPropio> findByUsuarioId(Long usuarioId);
 }

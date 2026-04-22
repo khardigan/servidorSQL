@@ -18,14 +18,17 @@ public class serviceUsuario {
         this.repoUsuario = repoUsuario;
     }
 
+    // Devuelve la lista de todos los usuarios.
     public List<Usuario> listarUsuarios() {
         return repoUsuario.findAll();
     }
 
+    // Busca un usuario por su ID.
     public Usuario buscarUsuarioPorId(Long id) {
         return repoUsuario.findById(id).orElse(null);
     }
 
+    // Guarda un nuevo usuario en la base de datos.
     public Usuario guardarUsuario(Usuario usuario) {
         if (usuario.getNombre() != null) {
             boolean existe = repoUsuario.findAll().stream()
@@ -37,6 +40,7 @@ public class serviceUsuario {
         return repoUsuario.save(usuario);
     }
 
+    // Actualiza los datos de un usuario existente.
     public Usuario actualizarUsuario(Long id, Usuario datos) {
         datos.setId(id);
         return repoUsuario.save(datos);
@@ -44,6 +48,7 @@ public class serviceUsuario {
 
    
 
+    // Devuelve la lista de productos que ha subido un usuario.
     public List<Producto> obtenerProductosSubidosPorUsuario(Long id) {
         Usuario u = repoUsuario.findById(id).orElse(null);
         return u == null ? new ArrayList<>() : u.getListaProductosSubidos();

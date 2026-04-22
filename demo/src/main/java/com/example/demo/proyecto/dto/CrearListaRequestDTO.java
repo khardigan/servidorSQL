@@ -3,6 +3,7 @@ package com.example.demo.proyecto.dto;
 import java.util.List;
 import jakarta.validation.constraints.NotNull;
 
+// DTO de entrada para crear una lista nueva. Tiene que recibir el nombre y los IDs de dueños y productos.
 public class CrearListaRequestDTO {
 
     private Long usuarioDuenoId;

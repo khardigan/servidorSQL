@@ -43,6 +43,8 @@ public class controllerUsuario {
     }
 
     // ----------------- LOGIN -----------------
+    // Loguea al usuario y devuelve sus datos y el token. (Tiene que recibir nombre
+    // y contraseña)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String nombre = request.get("nombre");
@@ -69,6 +71,8 @@ public class controllerUsuario {
     }
 
     // ----------------- RENOVAR TOKEN -----------------
+    // Te da un token nuevo si el que tienes es válido. (Tiene que recibir el token
+    // actual)
     @GetMapping("/renovar")
     public ResponseEntity<AuthResponse> obtenerNuevoJWT(@RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
@@ -80,12 +84,14 @@ public class controllerUsuario {
     }
 
     // ----------------- LISTAR USUARIOS -----------------
+    // Devuelve la lista de todos los usuarios.
     @GetMapping
     public ResponseEntity<?> listar() {
         return ResponseEntity.ok(serviceAuthen.listarUsuariosDTO());
     }
 
     // ----------------- OBTENER USUARIO POR ID (ADMIN) -----------------
+    // Te da la info de un usuario por su ID. (Tiene que recibir el ID y el Token)
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
@@ -103,7 +109,7 @@ public class controllerUsuario {
         Long tokenId = idClaim;
         String rol = serviceJWT.obtenerRol(token);
 
-        if (!rol.equals("ADMIN") && !tokenId.equals(id)) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !tokenId.equals(id)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("No tienes permisos para ver este usuario");
         }
@@ -115,6 +121,7 @@ public class controllerUsuario {
     }
 
     // --------- Mirar Perfil --------------------
+    // Te da el perfil de un usuario. (Tiene que recibir el ID y el Token)
     @GetMapping("/{id}/perfil")
     public ResponseEntity<?> obtenerPerfilDelUsuario(@PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
@@ -128,7 +135,7 @@ public class controllerUsuario {
         String rol = serviceJWT.obtenerRol(token);
         Long idToken = serviceJWT.obtenerId(token);
 
-        if (!rol.equals("ADMIN") && !idToken.equals(id)) {
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("No tienes permisos para ver este perfil");
         }
@@ -152,6 +159,8 @@ public class controllerUsuario {
     }
 
     // ----------------- REGISTRO PÚBLICO -----------------
+    // Crea un usuario nuevo y devuelve su token. (Tiene que recibir los datos del
+    // usuario)
     @PostMapping("/registrar")
     public ResponseEntity<AuthResponse> registrarPublico(@Valid @RequestBody CrearUsuarioRequestDTO dto) {
         AuthResponse authResponse = serviceAuthen.crearUsuarioDesdeDTO(dto);
@@ -159,6 +168,8 @@ public class controllerUsuario {
     }
 
     // ----------------- ACTUALIZAR USUARIO -----------------
+    // Cambia los datos de un usuario. (Tiene que recibir el ID, los datos nuevos y
+    // el Token)
     @PutMapping("actualizar/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos,
             @RequestHeader("Authorization") String authHeader) {
@@ -168,15 +179,9 @@ public class controllerUsuario {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Token inválido o ausente");
         }
-
         String rol = serviceJWT.obtenerRol(token);
-        String nombreUsuario = serviceJWT.obtenerSubject(token);
-
-        UsuarioDTO existente = serviceAuthen.obtenerUsuarioDTO(id);
-        if (existente == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
-
-        if (!rol.equals("ADMIN") && !existente.getNombre().equals(nombreUsuario)) {
+        Long idToken = serviceJWT.obtenerId(token);
+        if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Solo el propio usuario o admin pueden actualizar este usuario");
         }
@@ -186,6 +191,7 @@ public class controllerUsuario {
     }
 
     // ----------------- ELIMINAR USUARIO -----------------
+    // Borra a un usuario. (Tiene que recibir el ID y el Token)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
         System.out.println("PETICION RECIBIDA: DELETE /usuarios/" + id);
@@ -199,7 +205,7 @@ public class controllerUsuario {
         String rol = serviceJWT.obtenerRol(token);
         Long idToken = serviceJWT.obtenerId(token);
 
-        if (!rol.equals("ADMIN")) {
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
         }
 
@@ -210,6 +216,7 @@ public class controllerUsuario {
     }
 
     // ----------------- ELIMINAR TODOS LOS USUARIOS -----------------
+    // Borra a todos los usuarios de la base de datos. (Tiene que recibir el Token)
     @DeleteMapping("/eliminartodos")
     public ResponseEntity<?> eliminarTodos(@RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
@@ -220,7 +227,7 @@ public class controllerUsuario {
         }
 
         String rol = serviceJWT.obtenerRol(token);
-        if (!rol.equals("ADMIN")) {
+        if (!"ADMIN".equalsIgnoreCase(rol)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
         }
 
@@ -229,6 +236,7 @@ public class controllerUsuario {
     }
 
     // ----------------- PRODUCTOS DEL USUARIO -----------------
+    // Te da los productos que ha subido un usuario. (Tiene que recibir el ID)
     @GetMapping("/{id}/productos")
     public ResponseEntity<?> obtenerProductosDelUsuario(@PathVariable Long id) {
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
@@ -237,6 +245,7 @@ public class controllerUsuario {
         return ResponseEntity.ok(serviceAuthen.obtenerProductosSubidosPorUsuario(id));
     }
 
+    // Te da las listas que ha creado un usuario. (Tiene que recibir el ID)
     @GetMapping("/{id}/listas")
     public ResponseEntity<?> obtenerListasDelUsuario(@PathVariable Long id) {
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
