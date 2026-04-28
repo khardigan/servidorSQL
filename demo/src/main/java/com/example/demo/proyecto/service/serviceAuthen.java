@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.example.demo.proyecto.dto.AuthResponse;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
+
 import com.example.demo.proyecto.model.Lista;
 import com.example.demo.proyecto.model.ListaProducto;
 import com.example.demo.proyecto.model.PerfilUsario;
@@ -19,6 +20,7 @@ import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryLista;
 import com.example.demo.proyecto.repository.repositoryProducto;
 import com.example.demo.proyecto.repository.repositoryUsuario;
+import com.example.demo.proyecto.repository.repositoryComentario;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
@@ -30,6 +32,7 @@ public class serviceAuthen {
     private final repositoryProducto repoProducto;
     private final repositoryLista repoLista;
     private final repositoryUsuario repoUsuario;
+    private final repositoryComentario repoComentario;
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
@@ -109,7 +112,6 @@ public class serviceAuthen {
             leche.setNombre("Leche entera");
             leche.setDescripcion("Brick de leche entera 1L");
             leche.setPrecio(1.20);
-            leche.setCantidad(3);
             leche.setConfirmado(true);
             leche.setUsuarioRegistrador(admin);
             leche = repoProducto.save(leche);
@@ -118,7 +120,6 @@ public class serviceAuthen {
             pan.setNombre("Pan integral");
             pan.setDescripcion("Barra de pan integral de 500g");
             pan.setPrecio(1.50);
-            pan.setCantidad(2);
             pan.setConfirmado(true);
             pan.setUsuarioRegistrador(admin);
             pan = repoProducto.save(pan);
@@ -127,7 +128,6 @@ public class serviceAuthen {
             huevos.setNombre("Huevos camperos");
             huevos.setDescripcion("Docena de huevos camperos frescos");
             huevos.setPrecio(2.80);
-            huevos.setCantidad(1);
             huevos.setConfirmado(true);
             huevos.setUsuarioRegistrador(usuario2);
             huevos = repoProducto.save(huevos);
@@ -136,7 +136,6 @@ public class serviceAuthen {
             arroz.setNombre("Arroz basmati");
             arroz.setDescripcion("Paquete de arroz basmati 1kg");
             arroz.setPrecio(2.10);
-            arroz.setCantidad(1);
             arroz.setConfirmado(true);
             arroz.setUsuarioRegistrador(admin);
             arroz = repoProducto.save(arroz);
@@ -203,11 +202,13 @@ public class serviceAuthen {
     public serviceAuthen(serviceJWT jwtService, PasswordEncoder passwordEncoder,
             repositoryUsuario repoUsuario,
             repositoryProducto repoProducto,
+            repositoryComentario repoComentario,
             repositoryLista repoLista) {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.repoUsuario = repoUsuario;
         this.repoProducto = repoProducto;
+        this.repoComentario = repoComentario;
         this.repoLista = repoLista;
     }
 
@@ -339,7 +340,8 @@ public class serviceAuthen {
             return false;
         }
 
-        System.out.println("DEBUG: Usuario '" + usuario.getNombre() + "' encontrado. Activo antes: " + usuario.getActivo());
+        System.out.println(
+                "DEBUG: Usuario '" + usuario.getNombre() + "' encontrado. Activo antes: " + usuario.getActivo());
 
         // Borrado lógico: desactivamos al usuario en lugar de borrarlo físicamente
         usuario.setActivo(false);

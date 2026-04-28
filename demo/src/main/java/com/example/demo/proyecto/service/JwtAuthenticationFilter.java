@@ -28,6 +28,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @org.springframework.lang.NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
+        // 1. SI ES UNA PETICIÓN OPTIONS, DÉJALA PASAR SIN MIRAR TOKEN
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

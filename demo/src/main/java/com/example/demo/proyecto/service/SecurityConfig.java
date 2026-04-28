@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,8 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -34,7 +37,11 @@ public class SecurityConfig {
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/usuarios/login", "/usuarios/registrar").permitAll()
-                        .requestMatchers("/productos", "/productos/buscar").permitAll()
+                        .requestMatchers("/productos", "/productos/buscar", "/productos/categorias",
+                                "/productos/supermercados", "/productos/pending")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/comentarios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/usuarios/comentarios/**").permitAll()
                         .requestMatchers("/listas/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .anyRequest().authenticated())

@@ -47,14 +47,25 @@ public class controllerProducto {
         return ResponseEntity.ok(service.listarProductosDTO());
     }
 
-    // ---------------- Buscar --------------
     // Busca productos por nombre o descripción. (Tiene que recibir el Token)
     @GetMapping("/buscar")
     public ResponseEntity<List<ProductoDTO>> buscar(@RequestParam String q) {
         return ResponseEntity.ok(service.buscarProductosDTO(q));
     }
 
-    // Te da el producto por ID. (Tiene que recibir el Token)
+    // Devuelve la lista de categorías únicas.
+    @GetMapping("/categorias")
+    public ResponseEntity<List<String>> listarCategorias() {
+        return ResponseEntity.ok(service.listarCategorias());
+    }
+
+    // Devuelve la lista de supermercados únicos.
+    @GetMapping("/supermercados")
+    public ResponseEntity<List<String>> listarSupermercados() {
+        return ResponseEntity.ok(service.listarSupermercados());
+    }
+
+    // Te da el producto por ID.
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id) {
         ProductoDTO p = service.obtenerProductoDTO(id);
@@ -228,5 +239,11 @@ public class controllerProducto {
                 .filter(u -> nombre.equals(u.getNombre()))
                 .findFirst();
         return opt.orElse(null);
+    }
+
+    @GetMapping("/mediaPuntuacionComentarios")
+    public ResponseEntity<?> obtenerMediaPuntuacionYComentarios() {
+        List<ProductoDTO> productos = service.listarProductosDTOPuntuacion();
+        return ResponseEntity.ok(productos);
     }
 }

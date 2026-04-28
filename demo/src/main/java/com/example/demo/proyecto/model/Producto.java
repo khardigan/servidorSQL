@@ -45,10 +45,10 @@ public class Producto {
     @NotNull(message = "El precio no puede ser nulo")
     @Positive(message = "El precio debe ser positivo")
     private Double precio;
-    @Range(min = 1, max = 1000, message = "Debes comprar minimo 1 y maximo 100 por cada compra")
-    private int cantidad;
     private Boolean confirmado;
     private String supermercado;
+    private String categoria;
+    private String imagenUrl;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
@@ -57,6 +57,9 @@ public class Producto {
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ListaProducto> listas;
+
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comentario> comentarios;
 
     public void setConfirmado(boolean confirmado) {
         this.confirmado = confirmado;

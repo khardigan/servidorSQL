@@ -9,11 +9,59 @@ public class ProductoDTO {
     private String nombre;
     private String descripcion;
     private Double precio;
-    private int cantidad;
     private Long usuarioRegistradorId;
     private List<Long> listas;
     private boolean confirmado;
     private String supermercado;
+    private String imagenUrl;
+    private String categoria;
+    private Double mediaPuntuacion;
+    private Long totalComentarios;
+    private List<ComentarioDTO> comentarios;
+
+    // Constructor vacío (necesario para frameworks)
+    public ProductoDTO() {
+    }
+
+    // Constructor para la Query JPQL (Paso 2)
+    public ProductoDTO(Long id, String nombre, String descripcion, Double precio,
+            String supermercado, String imagenUrl, String categoria, Double mediaPuntuacion, Long totalComentarios) {
+        this.id = id;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.precio = precio;
+        this.supermercado = supermercado;
+        this.imagenUrl = imagenUrl;
+        this.categoria = categoria;
+        this.mediaPuntuacion = (mediaPuntuacion != null) ? mediaPuntuacion : 0.0;
+        this.totalComentarios = (totalComentarios != null) ? totalComentarios : 0L;
+    }
+
+    // ... Mantén tus getters y setters actuales y añade los nuevos:
+
+    public Double getMediaPuntuacion() {
+        return mediaPuntuacion;
+    }
+
+    public void setMediaPuntuacion(Double mediaPuntuacion) {
+        this.mediaPuntuacion = mediaPuntuacion;
+    }
+
+    public Long getTotalComentarios() {
+        return totalComentarios;
+    }
+
+    public void setTotalComentarios(Long totalComentarios) {
+        this.totalComentarios = totalComentarios;
+    }
+
+    public List<ComentarioDTO> getComentarios() {
+        return comentarios;
+    }
+
+    public void setComentarios(List<ComentarioDTO> comentarios) {
+        this.comentarios = comentarios;
+    }
 
     public Long getId() {
         return id;
@@ -47,14 +95,6 @@ public class ProductoDTO {
         this.precio = precio;
     }
 
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
     public Long getUsuarioRegistradorId() {
         return usuarioRegistradorId;
     }
@@ -85,6 +125,22 @@ public class ProductoDTO {
 
     public void setSupermercado(String supermercado) {
         this.supermercado = supermercado;
+    }
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
     }
 
 }

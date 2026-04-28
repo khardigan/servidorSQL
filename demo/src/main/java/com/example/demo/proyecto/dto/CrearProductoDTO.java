@@ -21,10 +21,9 @@ public class CrearProductoDTO {
     @Positive(message = "El precio debe ser mayor que 0")
     private Double precio;
 
-    @Range(min = 1, max = 1000, message = "La cantidad debe estar entre 1 y 1000")
-    private Integer cantidad;
-
     private String supermercado;
+    private String imagenUrl;
+    private String categoria;
 
     public String getNombre() {
         return nombre;
@@ -36,10 +35,6 @@ public class CrearProductoDTO {
 
     public Double getPrecio() {
         return precio;
-    }
-
-    public Integer getCantidad() {
-        return cantidad;
     }
 
     public void setNombre(String nombre) {
@@ -54,15 +49,27 @@ public class CrearProductoDTO {
         this.precio = precio;
     }
 
-    public void setCantidad(Integer cantidad) {
-        this.cantidad = cantidad;
-    }
-
     public String getSupermercado() {
         return supermercado;
     }
 
     public void setSupermercado(String supermercado) {
         this.supermercado = supermercado;
+    }
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
     }
 }

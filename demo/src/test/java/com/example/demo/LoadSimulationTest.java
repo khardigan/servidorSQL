@@ -1,125 +1,156 @@
 package com.example.demo;
 
-// Importamos lo necesario para hacer pruebas con JUnit
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.example.demo.proyecto.dto.ComentarioDTO;
+import com.example.demo.proyecto.model.Comentario;
+import com.example.demo.proyecto.model.Usuario;
+import com.example.demo.proyecto.repository.repositoryComentario;
+import com.example.demo.proyecto.repository.repositoryProducto;
+import com.example.demo.proyecto.repository.repositoryUsuario;
+import com.example.demo.proyecto.service.serviceComentario;
 
 /*
- * Esta clase contiene pruebas de carga, rendimiento y estrés.
-    No usamos herramientas externas, sino que simulamos nosotros
-    mismos situaciones donde el sistema trabaja mucho o con varios usuarios a la vez.
+ * Esta clase contiene pruebas de carga, rendimiento y estrés 
+ * específicas para nuestra aplicación, simulando el comportamiento 
+ * del sistema de comentarios bajo alta demanda.
  */
+@ExtendWith(MockitoExtension.class)
 public class LoadSimulationTest {
 
+    @Mock
+    private repositoryComentario repoComentario;
+
+    @Mock
+    private repositoryUsuario repoUsuario;
+
+    @Mock
+    private repositoryProducto repoProducto;
+
+    @InjectMocks
+    private serviceComentario comentarioService;
+
+    private List<Comentario> mockComentarios;
+
+    @BeforeEach
+    void setUp() {
+        mockComentarios = new ArrayList<>();
+        Usuario dummyUser = mock(Usuario.class);
+        // Para evitar problemas si el método no se llama, usamos leniency
+        org.mockito.Mockito.lenient().when(dummyUser.getId()).thenReturn(1L);
+
+        // Preparamos 1000 comentarios simulados en memoria
+        for (int i = 0; i < 1000; i++) {
+            Comentario c = new Comentario(
+                    "Comentario de prueba " + i,
+                    java.sql.Date.valueOf(LocalDate.now()),
+                    4.5,
+                    dummyUser
+            );
+            mockComentarios.add(c);
+        }
+    }
+
     /*
-     * PRUEBA 1: SIMULACIÓN DE CONCURRENCIA
+     * PRUEBA 1: SIMULACIÓN DE CONCURRENCIA EN EL SERVICIO
      * 
-     * Aquí simulamos 50 usuarios (hilos) ejecutando algo al mismo tiempo.
-     * La idea es comprobar que el sistema puede manejar varias tareas simultáneas
-     * sin fallar ni quedarse bloqueado.
+     * Simulamos 50 usuarios (hilos) pidiendo la lista de comentarios al mismo tiempo.
+     * La idea es comprobar que el servicio puede manejar múltiples peticiones 
+     * concurrentes correctamente y sin bloqueos al transformar las entidades a DTOs.
      */
     @Test
-    void testSimulacionConcurrencia() throws InterruptedException {
-        // Número de hilos (usuarios simulados)
+    void testSimulacionConcurrenciaComentarios() throws InterruptedException {
+        when(repoComentario.findAll()).thenReturn(mockComentarios);
+
         int numeroDeHilos = 50;
-        // Creamos un "pool" de hilos con 50 trabajadores
         ExecutorService executor = Executors.newFixedThreadPool(numeroDeHilos);
-        // Contador seguro para entornos concurrentes (evita errores entre hilos)
         AtomicInteger contadorExitos = new AtomicInteger(0);
-        // Definimos la tarea que ejecutará cada hilo
+
         Runnable tarea = () -> {
             try {
-                // Simulamos una pequeña operación (como acceder a base de datos) y si termina correctamente, aumentamos el contador
-                Thread.sleep(10);
-                contadorExitos.incrementAndGet();
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                List<ComentarioDTO> resultado = comentarioService.obtenerTodosComentarios();
+                if (resultado != null && resultado.size() == 1000) {
+                    contadorExitos.incrementAndGet();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         };
 
-        // Enviamos la tarea 50 veces (una por cada hilo)
         for (int i = 0; i < numeroDeHilos; i++) {
             executor.submit(tarea);
         }
 
-        // Indicamos que no se enviarán más tareas
         executor.shutdown();
-        // Esperamos máximo 5 segundos a que todos los hilos terminen
         boolean terminado = executor.awaitTermination(5, TimeUnit.SECONDS);
-        // Comprobamos que todos terminaron
+        
         assertTrue(terminado, "Todas las tareas deberían haber terminado");
-        // Comprobamos que las 50 tareas se ejecutaron correctamente
-        assertTrue(contadorExitos.get() == numeroDeHilos,
-                "Todas las tareas deberían haber sido exitosas");
-        System.out.println("Prueba de Concurrencia: " + numeroDeHilos + " hilos ejecutados correctamente.");
+        assertTrue(contadorExitos.get() == numeroDeHilos, "Todas las tareas deberían haber sido exitosas");
+        System.out.println("Prueba de Concurrencia: 50 hilos obtuvieron los comentarios correctamente.");
     }
 
     /*
-     * PRUEBA 2: MEDICIÓN DE RENDIMIENTO
+     * PRUEBA 2: MEDICIÓN DE RENDIMIENTO DEL MAPEO DE DTOs
      * 
-     * Aquí medimos cuánto tarda en ejecutarse una operación.
-     * La idea es comprobar que no supera un tiempo límite aceptable.
+     * Medimos cuánto tarda el sistema en procesar y mapear 1000 comentarios reales.
+     * Nos aseguramos de que el tiempo de respuesta sea óptimo para la experiencia de usuario.
      */
     @Test
-    void testRendimientoOperacion() {
+    void testRendimientoObtencionComentarios() {
+        when(repoComentario.findAll()).thenReturn(mockComentarios);
 
-        // Guardamos el tiempo antes de empezar
         long inicio = System.currentTimeMillis();
-        // Ejecutamos la operación que queremos medir
-        operacionPesadaSimulada();
-        // Guardamos el tiempo al terminar
+        
+        List<ComentarioDTO> resultado = comentarioService.obtenerTodosComentarios();
+        
         long fin = System.currentTimeMillis();
-        // Calculamos cuánto ha tardado
         long duracion = fin - inicio;
-        System.out.println("Duración operación: " + duracion + " ms");
-        // Verificamos que no tarde más de 500 milisegundos
-        assertTrue(duracion < 500,
-                "La operación no debería tardar más de 500ms");
-    }
-
-    /* Método que simula una operación pesada.  Aquí simplemente hacemos que el sistema espere 100ms
-        como si estuviera procesando algo complejo.
-     */
-    private void operacionPesadaSimulada() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        
+        System.out.println("Duración de mapear 1000 comentarios: " + duracion + " ms");
+        
+        assertTrue(resultado.size() == 1000);
+        assertTrue(duracion < 1000, "El sistema no debería tardar más de 1000ms en procesar 1000 comentarios");
     }
 
     /*
-     * PRUEBA 3: PRUEBA DE ESTRÉS
+     * PRUEBA 3: PRUEBA DE ESTRÉS DE PROCESAMIENTO
      * 
-     * Ejecutamos una operación sencilla 10.000 veces seguidas.
-     * La idea es comprobar que el sistema aguanta muchas ejecuciones
-     * sin lanzar errores ni romperse.
+     * Ejecutamos la petición masiva de comentarios 10,000 veces.
+     * Comprobamos que el servicio aguanta un uso intensivo continuado sin
+     * desbordar la memoria ni lanzar excepciones.
      */
     @Test
-    void testEstresBucle() {
+    void testEstresProcesamientoComentarios() {
+        when(repoComentario.findAll()).thenReturn(mockComentarios);
 
         int iteraciones = 10000;
-
         long inicio = System.currentTimeMillis();
 
-        // Repetimos muchas veces una operación matemática simple
         for (int i = 0; i < iteraciones; i++) {
-            Math.sqrt(i * 1234.56);
+            comentarioService.obtenerTodosComentarios();
         }
 
         long fin = System.currentTimeMillis();
 
-        System.out.println("Prueba de Estrés: " + iteraciones +
-                " iteraciones en " + (fin - inicio) + " ms");
+        System.out.println("Prueba de Estrés: " + iteraciones + " peticiones procesadas en " + (fin - inicio) + " ms");
 
-        // Si el código llega aquí sin errores, la prueba pasa
-        assertTrue(true);
+        assertTrue(true); // Si llega aquí sin un OutOfMemoryError u otra excepción, pasa la prueba de estrés.
     }
 }
