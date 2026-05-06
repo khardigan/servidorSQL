@@ -16,10 +16,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@JsonIdentityInfo(
-    generator = ObjectIdGenerators.PropertyGenerator.class,
-    property = "nombrePerfil"  
-)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "nombrePerfil")
 @Entity
 @Table(name = "perfil_usuario")
 @Data
@@ -29,34 +26,33 @@ public class PerfilUsario {
     @Column(name = "id_perfil")
     private int id;
 
-    @Column(name="nombre_perfil", unique=true)
+    @Column(name = "nombre_perfil", unique = true)
     private String nombrePerfil;
 
-    
-    @Column(name="descripcion", length=200)
-    @Length(max=200, message="El maximo de caracteres es 200")
+    @Column(name = "descripcion", length = 200)
+    @Length(max = 200, message = "El maximo de caracteres es 200")
     private String descripcion;
 
-    @Column(name="subtitulo")
+    @Column(name = "subtitulo")
     private String subtitulo;
 
-    @Column(name="fecha_nacimiento")
+    @Column(name = "fecha_nacimiento")
     private String fechaNacimiento;
 
-    @Column(name="edad")
+    @Column(name = "edad")
     private String edad;
 
-    @Column(name="residencia")
+    @Column(name = "residencia")
     private String residencia;
 
-    @Column(name="email")
+    @Column(name = "email")
     private String email;
 
-    @Column(name="telefono")
+    @Column(name = "telefono")
     private String telefono;
 
     @OneToOne
-    @JoinColumn(name="usuario_id")
+    @JoinColumn(name = "usuario_id")
     @JsonBackReference
     private Usuario usuario;
 

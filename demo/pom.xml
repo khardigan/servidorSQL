@@ -100,10 +100,15 @@
         <artifactId>spring-security-test</artifactId>
         <scope>test</scope>
     </dependency>
-
-
+        
+        <!-- Esto es para enviar correos desde Java -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 
     </dependencies>
+
 
     <build>
         <plugins>

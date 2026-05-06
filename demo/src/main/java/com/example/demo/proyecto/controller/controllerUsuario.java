@@ -26,6 +26,7 @@ import com.example.demo.proyecto.service.serviceAuthen;
 import com.example.demo.proyecto.service.serviceJWT;
 import com.example.demo.proyecto.service.servicePerfilUsuario;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.Valid;
 
@@ -49,12 +50,12 @@ public class controllerUsuario {
     // y contraseña)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        String nombre = request.get("nombre");
+        String ident = request.get("nombre"); // nombre o email
         String password = request.get("password");
 
-        if (nombre == null || nombre.trim().isEmpty()) {
+        if (ident == null || ident.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "El nombre de usuario es requerido"));
+                    .body(Map.of("error", "El nombre de usuario o email es requerido"));
         }
 
         if (password == null || password.trim().isEmpty()) {
@@ -62,14 +63,13 @@ public class controllerUsuario {
                     .body(Map.of("error", "La contraseña es requerida"));
         }
 
-        AuthResponse authResponse = serviceAuthen.login(nombre, password);
-
-        if (authResponse == null) {
+        try {
+            AuthResponse authResponse = serviceAuthen.login(ident, password);
+            return ResponseEntity.ok(authResponse);
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Usuario o contraseña incorrectos"));
+                    .body(Map.of("error", e.getMessage()));
         }
-
-        return ResponseEntity.ok(authResponse);
     }
 
     // ----------------- RENOVAR TOKEN -----------------
@@ -144,35 +144,45 @@ public class controllerUsuario {
 
         UsuarioDTO usuario = serviceAuthen.obtenerUsuarioDTO(id);
         if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Usuario no encontrado");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         }
 
-        // IMPORTANT: We must fetch the profile using the Profile ID associated with the
-        // user,
-        // not the User ID directly, because they might differ.
-        PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilDTO(usuario.getIdPerfil());
+        PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilPorUsuarioId(id);
+
         if (perfil == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Perfil no encontrado para este usuario");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado para el usuario");
         }
 
         return ResponseEntity.ok(perfil);
     }
 
     // ----------------- REGISTRO PÚBLICO -----------------
-    // Crea un usuario nuevo y devuelve su token. (Tiene que recibir los datos del
-    // usuario)
     @PostMapping("/registrar")
-    public ResponseEntity<AuthResponse> registrarPublico(@Valid @RequestBody CrearUsuarioRequestDTO dto) {
-        AuthResponse authResponse = serviceAuthen.crearUsuarioDesdeDTO(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
+    public ResponseEntity<?> registrarPublico(
+            @Valid @RequestBody CrearUsuarioRequestDTO dto) {
+
+        serviceAuthen.crearUsuarioDesdeDTO(dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("mensaje", "Usuario registrado. Revisa tu correo para confirmar la cuenta."));
+    }
+
+    // ----------------- VERIFICAR EMAIL -----------------
+    @GetMapping("/verificar")
+    public ResponseEntity<?> verificarEmail(@RequestParam String token) {
+        boolean ok = serviceAuthen.verificarEmail(token);
+        if (ok) {
+            return ResponseEntity.ok(Map.of("mensaje", "Correo verificado con éxito. Ya puedes iniciar sesión."));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Token inválido o cuenta ya verificada"));
+        }
     }
 
     // ----------------- ACTUALIZAR USUARIO -----------------
     // Cambia los datos de un usuario. (Tiene que recibir el ID, los datos nuevos y
     // el Token)
-    @PutMapping("actualizar/{id}")
+    @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos,
             @RequestHeader("Authorization") String authHeader) {
 
@@ -188,7 +198,7 @@ public class controllerUsuario {
                     .body("Solo el propio usuario o admin pueden actualizar este usuario");
         }
 
-        Usuario actualizado = serviceAuthen.actualizarUsuario(id, datos);
+        UsuarioDTO actualizado = serviceAuthen.actualizarUsuario(id, datos);
         return ResponseEntity.ok(actualizado);
     }
 
@@ -233,7 +243,7 @@ public class controllerUsuario {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
         }
 
-        serviceAuthen.eliminarTodosUsuarios();
+        serviceAuthen.eliminarTodosLosUsuarios();
         return ResponseEntity.noContent().build();
     }
 
@@ -256,7 +266,52 @@ public class controllerUsuario {
         return ResponseEntity.ok(serviceAuthen.obtenerListasSubidosPorUsuario(id));
     }
 
+    // ----------------- RECUPERAR CONTRASEÑA -----------------
+    @PostMapping("/recuperar")
+    public ResponseEntity<?> recuperarPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String nombre = request.get("nombre");
+
+        if (email == null || nombre == null || email.trim().isEmpty() || nombre.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Nombre y email son requeridos"));
+        }
+
+        serviceAuthen.solicitarRecuperacion(nombre, email);
+        return ResponseEntity.ok(Map.of("mensaje", "Si los datos coinciden, se enviará un enlace pronto"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetearPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token") != null ? request.get("token").trim() : null;
+        String password = request.get("password");
+
+        if (token == null || password == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Datos incompletos"));
+        }
+        // Si el nombre no es el que tiene registrado el usuario/token, no se puede
+        // resetear la contraseña
+        String nombre = request.get("nombre");
+        if (nombre == null || !serviceAuthen.esUsuario(nombre)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Nombre no registrado"));
+        }
+
+        // si el correo no es el que tiene registrado el usuario/token, no se puede
+        // resetear la contraseña
+        String email = request.get("email");
+        if (email == null || !serviceAuthen.esUsuario(email)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Correo no registrado"));
+        }
+
+        boolean ok = serviceAuthen.resetearPassword(token, password);
+        if (ok) {
+            return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada con éxito"));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Token inválido o caducado"));
+        }
+    }
+
     // --------- Validar token
+
     private String validarToken(String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
         if (token == null || !serviceJWT.esTokenValido(token)) {

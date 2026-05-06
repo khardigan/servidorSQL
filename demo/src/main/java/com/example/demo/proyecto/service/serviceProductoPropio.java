@@ -35,6 +35,7 @@ public class serviceProductoPropio {
 
     // Crea un producto nuevo dentro de una lista.
     public ProductoPropioDTO crearItem(Long usuarioId, CrearProductoPropioDTO dto) {
+        if (usuarioId == null) throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
         Usuario usuario = repoUsuario.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -59,6 +60,7 @@ public class serviceProductoPropio {
     @SuppressWarnings("null")
     // Actualiza los datos de un producto propio.
     public ProductoPropioDTO actualizarItem(Long id, CrearProductoPropioDTO dto) {
+        if (id == null) return null;
         ProductoPropio producto = repoProductoPropio.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
@@ -88,6 +90,7 @@ public class serviceProductoPropio {
 
     // Elimina un producto propio del sistema.
     public void eliminarItem(Long id) {
+        if (id == null) return;
         repoProductoPropio.deleteById(id);
     }
 

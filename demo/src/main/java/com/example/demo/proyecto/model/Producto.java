@@ -1,5 +1,6 @@
 package com.example.demo.proyecto.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.validator.constraints.Length;
@@ -47,8 +48,8 @@ public class Producto {
     private Double precio;
     private Boolean confirmado;
     private String supermercado;
-    private String categoria;
     private String imagenUrl;
+    private String categoria;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")

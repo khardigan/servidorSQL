@@ -7,6 +7,7 @@ public class ProductoEstadoDTO {
     private Double precio;
     private int cantidad;
     private boolean comprado;
+    private String supermercado;
 
     public Long getId() {
         return id;
@@ -46,5 +47,13 @@ public class ProductoEstadoDTO {
 
     public void setComprado(boolean comprado) {
         this.comprado = comprado;
+    }
+
+    public String getSupermercado() {
+        return supermercado;
+    }
+
+    public void setSupermercado(String supermercado) {
+        this.supermercado = supermercado;
     }
 }

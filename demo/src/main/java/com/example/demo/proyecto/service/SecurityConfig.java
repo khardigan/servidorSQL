@@ -27,7 +27,7 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    // Seguridad principal: HTTPS + JWT
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/usuarios/login", "/usuarios/registrar").permitAll()
+                        .requestMatchers("/", "/usuarios/login", "/usuarios/registrar", "/usuarios/verificar", "/usuarios/recuperar", "/usuarios/reset-password").permitAll()
                         .requestMatchers("/productos", "/productos/buscar", "/productos/categorias",
                                 "/productos/supermercados", "/productos/pending")
                         .permitAll()

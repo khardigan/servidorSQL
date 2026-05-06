@@ -1,6 +1,8 @@
 package com.example.demo.proyecto.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class Usuario {
 
     @NotBlank(message = "El nombre de usuario no puede ser nulo")
     @Size(min = 2, max = 255, message = "El nombre debe tener entre 2 y 255 caracteres")
+    @Column(unique = true)
     private String nombre;
     @NotBlank(message = "El email no puede ser nulo")
     @Size(min = 5, max = 255, message = "El email debe tener entre 5 y 255 caracteres")
@@ -58,6 +61,13 @@ public class Usuario {
 
     private Boolean activo = true;
 
+    // Campos para recuperación de contraseña
+    private String resetToken;
+    private LocalDateTime resetTokenExpiration;
+
+    // Campos para verificación de email
+    private String verificationToken;
+
     // @ElementCollection
     // @CollectionTable(name = "usuario_comentarios", joinColumns = @JoinColumn(name
     // = "usuario_id"))
@@ -66,11 +76,11 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comentario> comentarios = new ArrayList<>();
 
-    @OneToMany(mappedBy = "usuarioRegistrador", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "usuarioRegistrador", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Producto> listaProductosSubidos;
 
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private PerfilUsario perfilUsuario;
 

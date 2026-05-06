@@ -1,8 +1,10 @@
 package com.example.demo.proyecto.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -57,6 +59,7 @@ public class serviceLista {
     // ---------------- BUSCAR ----------------
     // Busca una lista por su clave interna (ID).
     public Lista buscarListaPorId(Long id) {
+        if (id == null) return null;
         return repoLista.findById(id).orElse(null);
     }
 
@@ -114,6 +117,7 @@ public class serviceLista {
     @Transactional
     // Cambia los datos (nombre, productos, integrantes) de una lista.
     public ListaDTO actualizarLista(Long id, CrearListaRequestDTO request) {
+        if (id == null) return null;
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null)
             return null;
@@ -127,24 +131,31 @@ public class serviceLista {
         }
 
         if (request.getProductosEnLista() != null) {
-            if (lista.getProductosEnLista() != null) {
-                lista.getProductosEnLista().clear();
-            } else {
-                lista.setProductosEnLista(new ArrayList<>());
-            }
-            List<ListaProducto> productos = request.getProductosEnLista().stream()
-                    .map(idProd -> {
-                        Producto p = repoProducto.findById(idProd).orElse(null);
-                        if (p == null)
-                            return null;
+            // Usamos un set de los IDs que queremos tener al final
+            Set<Long> nuevosIds = new HashSet<>(request.getProductosEnLista());
+
+            // 1. Eliminar los que ya no están en la lista
+            lista.getProductosEnLista().removeIf(lp -> !nuevosIds.contains(lp.getProducto().getId()));
+
+            // 2. Identificar cuáles de los nuevos ya existen para no duplicarlos
+            Set<Long> idsExistentes = lista.getProductosEnLista().stream()
+                    .map(lp -> lp.getProducto().getId())
+                    .collect(Collectors.toSet());
+
+            // 3. Añadir solo los que faltan
+            for (Long idProd : nuevosIds) {
+                if (!idsExistentes.contains(idProd)) {
+                    Producto p = repoProducto.findById(idProd).orElse(null);
+                    if (p != null) {
                         ListaProducto lp = new ListaProducto();
                         lp.setLista(lista);
                         lp.setProducto(p);
                         lp.setComprado(false);
-                        return lp;
-                    })
-                    .filter(lp -> lp != null).collect(Collectors.toList());
-            lista.getProductosEnLista().addAll(productos);
+                        lp.setCantidad(1);
+                        lista.getProductosEnLista().add(lp);
+                    }
+                }
+            }
         }
 
         if (request.getUsuariosCompartida() != null) {
@@ -231,6 +242,7 @@ public class serviceLista {
                 pDto.setPrecio(p.getPrecio());
                 pDto.setCantidad(lp.getCantidad() != null ? lp.getCantidad() : 1);
                 pDto.setComprado(Boolean.TRUE.equals(lp.getComprado()));
+                pDto.setSupermercado(p.getSupermercado());
                 return pDto;
             }).toList();
             dto.setProductos(prodsDto);
@@ -255,6 +267,7 @@ public class serviceLista {
     @Transactional
     // Borra una lista por completo por su ID.
     public boolean eliminarLista(Long id) {
+        if (id == null) return false;
         if (repoLista.existsById(id)) {
             repoLista.deleteById(id);
             return true;
@@ -286,6 +299,47 @@ public class serviceLista {
         Lista l = repoLista.findById(id).orElse(null);
         if (l == null)
             return false;
+
+        Usuario listasPublicas = repoUsuario.findByNombreIgnoreCase("ListasPublicas");
+
+        if (estado) {
+            // PUBLICAR
+            if (listasPublicas != null) {
+                // Buscamos si ya existe un snapshot de ESTA lista específica
+                // Buscamos por el patrón de metadata que incluya el ID de la lista original
+                String metaSearch = "orig=" + l.getCodLista() + "|";
+                Optional<Lista> snapshotExistente = repoLista.findAll().stream()
+                        .filter(lista -> "ListasPublicas".equals(lista.getUsuarioDueno().getNombre()) &&
+                                lista.getNombre() != null && lista.getNombre().contains(metaSearch))
+                        .findFirst();
+
+                if (snapshotExistente.isEmpty()) {
+                    // No hay snapshot, lo creamos
+                    ListaDTO copiaDto = clonarLista(id, listasPublicas);
+                    if (copiaDto != null) {
+                        Lista copia = repoLista.findById(copiaDto.getCodLista()).orElse(null);
+                        if (copia != null) {
+                            copia.setPublicada(true);
+                            // Metadata: id del dueño y ID de la lista original para poder encontrarla luego
+                            copia.setNombre(l.getNombre() + " |META:id=" + l.getUsuarioDueno().getId() + 
+                                           ",nick=" + l.getUsuarioDueno().getNombre() + 
+                                           ",orig=" + l.getCodLista() + "|");
+                            repoLista.save(copia);
+                        }
+                    }
+                }
+            }
+        } else {
+            // DESPUBLICAR
+            if (listasPublicas != null) {
+                String metaSearch = "orig=" + l.getCodLista() + "|";
+                repoLista.findAll().stream()
+                        .filter(lista -> "ListasPublicas".equals(lista.getUsuarioDueno().getNombre()) &&
+                                lista.getNombre() != null && lista.getNombre().contains(metaSearch))
+                        .forEach(snapshot -> repoLista.delete(snapshot));
+            }
+        }
+
         l.setPublicada(estado);
         repoLista.save(l);
         return true;
@@ -294,6 +348,7 @@ public class serviceLista {
     @Transactional
     // Cambia el nombre de la lista.
     public boolean actualizarNombre(Long id, String nuevoNombre) {
+        if (id == null) return false;
         Lista l = repoLista.findById(id).orElse(null);
         if (l == null)
             return false;
@@ -304,11 +359,35 @@ public class serviceLista {
 
     // ---------------- LISTAR PÚBLICAS ----------------
     @Transactional
-    // Te da todas las listas que la gente ha hecho públicas.
+    // Te da todas las listas que la gente ha hecho públicas (mostramos solo las
+    // guardadas en ListasPublicas).
     public List<ListaDetalleDTO> obtenerListasPublicas() {
         return repoLista.findAll().stream()
-                .filter(l -> Boolean.TRUE.equals(l.getPublicada()))
-                .map(this::convertirAListaDetalle)
+                .filter(l -> Boolean.TRUE.equals(l.getPublicada())
+                        && "ListasPublicas".equals(l.getUsuarioDueno().getNombre()))
+                .map(l -> {
+                    ListaDetalleDTO dto = convertirAListaDetalle(l);
+                    String nombreReal = dto.getNombre();
+                    if (nombreReal != null && nombreReal.contains("|META:")) {
+                        try {
+                            int startMeta = nombreReal.indexOf("|META:");
+                            int endMeta = nombreReal.indexOf("|", startMeta + 6);
+                            if (endMeta != -1) {
+                                String metaContent = nombreReal.substring(startMeta + 6, endMeta);
+                                String[] parts = metaContent.split(",");
+                                for (String p : parts) {
+                                    if (p.startsWith("id="))
+                                        dto.setUsuarioDuenoId(Long.parseLong(p.substring(3)));
+                                    if (p.startsWith("nick="))
+                                        dto.setNombreDuenoNick(p.substring(5));
+                                }
+                                dto.setNombre(nombreReal.substring(0, startMeta).trim());
+                            }
+                        } catch (Exception e) {
+                        }
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -326,13 +405,14 @@ public class serviceLista {
         nueva.setPublicada(false);
         nueva.setCodigo(generarCodigoAleatorio());
 
-        // Copiamos los productos
+        // Copiamos los productos (incluyendo cantidades)
         if (original.getProductosEnLista() != null) {
             List<ListaProducto> nuevosProds = original.getProductosEnLista().stream()
                     .map(lp -> {
                         ListaProducto nLp = new ListaProducto();
                         nLp.setLista(nueva);
                         nLp.setProducto(lp.getProducto());
+                        nLp.setCantidad(lp.getCantidad() != null ? lp.getCantidad() : 1);
                         nLp.setComprado(false); // Al clonar, nada está comprado
                         return nLp;
                     }).collect(Collectors.toList());
@@ -364,10 +444,7 @@ public class serviceLista {
     @Transactional
     // Marca si ya has echado un producto al carro.
     public boolean marcarProductoComoComprado(Long listaId, Long productoId, boolean estado, Usuario usuario) {
-        // Recupera la lista, comprueba que el usuario pertenezca a ella y luego busca y
-        // actualiza
-        // únicamente el estado del producto requerido, guardándolo en la base de datos
-        // intermedia 'ListaProducto'
+        if (listaId == null || productoId == null) return false;
         Lista lista = repoLista.findById(listaId).orElse(null);
         if (lista == null)
             throw new RuntimeException("Lista no encontrada");
@@ -397,6 +474,7 @@ public class serviceLista {
     @Transactional
     // Cambia cuántas unidades quieres de un producto.
     public boolean actualizarCantidadProducto(Long listaId, Long productoId, int cantidad, Usuario usuario) {
+        if (listaId == null || productoId == null) return false;
         Lista lista = repoLista.findById(listaId).orElse(null);
         if (lista == null)
             throw new RuntimeException("Lista no encontrada");

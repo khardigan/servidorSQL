@@ -25,7 +25,8 @@ public class ProductoDTO {
 
     // Constructor para la Query JPQL (Paso 2)
     public ProductoDTO(Long id, String nombre, String descripcion, Double precio,
-            String supermercado, String imagenUrl, String categoria, Double mediaPuntuacion, Long totalComentarios) {
+            String supermercado, String imagenUrl, String categoria, Double mediaPuntuacion,
+            Long totalComentarios) {
         this.id = id;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -142,5 +143,4 @@ public class ProductoDTO {
     public void setCategoria(String categoria) {
         this.categoria = categoria;
     }
-
 }

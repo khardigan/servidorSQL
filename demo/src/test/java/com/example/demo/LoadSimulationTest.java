@@ -52,18 +52,20 @@ public class LoadSimulationTest {
     @BeforeEach
     void setUp() {
         mockComentarios = new ArrayList<>();
-        Usuario dummyUser = mock(Usuario.class);
-        // Para evitar problemas si el método no se llama, usamos leniency
-        org.mockito.Mockito.lenient().when(dummyUser.getId()).thenReturn(1L);
+        Usuario dummyUser = new Usuario();
+        dummyUser.setId(1L);
+        dummyUser.setNombre("usuario_carga");
+        dummyUser.setEmail("carga@ejemplo.com");
 
-        // Preparamos 1000 comentarios simulados en memoria
         for (int i = 0; i < 1000; i++) {
             Comentario c = new Comentario(
                     "Comentario de prueba " + i,
                     java.sql.Date.valueOf(LocalDate.now()),
                     4.5,
-                    dummyUser
-            );
+                    dummyUser);
+            // IMPORTANTE: Asegurarnos de que el ID del comentario sea distinto para cada
+            // uno si el DTO lo requiere
+            c.setIdComentario((long) i);
             mockComentarios.add(c);
         }
     }
@@ -71,9 +73,11 @@ public class LoadSimulationTest {
     /*
      * PRUEBA 1: SIMULACIÓN DE CONCURRENCIA EN EL SERVICIO
      * 
-     * Simulamos 50 usuarios (hilos) pidiendo la lista de comentarios al mismo tiempo.
-     * La idea es comprobar que el servicio puede manejar múltiples peticiones 
-     * concurrentes correctamente y sin bloqueos al transformar las entidades a DTOs.
+     * Simulamos 50 usuarios (hilos) pidiendo la lista de comentarios al mismo
+     * tiempo.
+     * La idea es comprobar que el servicio puede manejar múltiples peticiones
+     * concurrentes correctamente y sin bloqueos al transformar las entidades a
+     * DTOs.
      */
     @Test
     void testSimulacionConcurrenciaComentarios() throws InterruptedException {
@@ -100,7 +104,7 @@ public class LoadSimulationTest {
 
         executor.shutdown();
         boolean terminado = executor.awaitTermination(5, TimeUnit.SECONDS);
-        
+
         assertTrue(terminado, "Todas las tareas deberían haber terminado");
         assertTrue(contadorExitos.get() == numeroDeHilos, "Todas las tareas deberían haber sido exitosas");
         System.out.println("Prueba de Concurrencia: 50 hilos obtuvieron los comentarios correctamente.");
@@ -110,21 +114,22 @@ public class LoadSimulationTest {
      * PRUEBA 2: MEDICIÓN DE RENDIMIENTO DEL MAPEO DE DTOs
      * 
      * Medimos cuánto tarda el sistema en procesar y mapear 1000 comentarios reales.
-     * Nos aseguramos de que el tiempo de respuesta sea óptimo para la experiencia de usuario.
+     * Nos aseguramos de que el tiempo de respuesta sea óptimo para la experiencia
+     * de usuario.
      */
     @Test
     void testRendimientoObtencionComentarios() {
         when(repoComentario.findAll()).thenReturn(mockComentarios);
 
         long inicio = System.currentTimeMillis();
-        
+
         List<ComentarioDTO> resultado = comentarioService.obtenerTodosComentarios();
-        
+
         long fin = System.currentTimeMillis();
         long duracion = fin - inicio;
-        
+
         System.out.println("Duración de mapear 1000 comentarios: " + duracion + " ms");
-        
+
         assertTrue(resultado.size() == 1000);
         assertTrue(duracion < 1000, "El sistema no debería tardar más de 1000ms en procesar 1000 comentarios");
     }
@@ -151,6 +156,6 @@ public class LoadSimulationTest {
 
         System.out.println("Prueba de Estrés: " + iteraciones + " peticiones procesadas en " + (fin - inicio) + " ms");
 
-        assertTrue(true); // Si llega aquí sin un OutOfMemoryError u otra excepción, pasa la prueba de estrés.
+        assertTrue(true); 
     }
 }

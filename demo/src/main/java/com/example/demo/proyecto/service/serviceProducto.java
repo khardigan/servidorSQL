@@ -93,20 +93,6 @@ public class serviceProducto {
                 p3.setCategoria("Tecnología");
                 productosDefault.add(p3);
 
-                // --- Additional seed products ---
-                // Producto 4
-                Producto p4 = new Producto();
-                p4.setNombre("iPhone 15 Pro Max");
-                p4.setDescripcion(
-                        "Titanio aeroespacial, chip A17 Pro, 256GB, sistema de cámaras Pro con zoom óptico 5x.");
-                p4.setPrecio(1469.0);
-
-                p4.setConfirmado(true);
-                p4.setUsuarioRegistrador(admin);
-                p4.setSupermercado("Apple Store");
-                p4.setCategoria("Tecnología");
-                productosDefault.add(p4);
-
                 // Producto 5
                 Producto p5 = new Producto();
                 p5.setNombre("Sony WH-1000XM5");
@@ -142,62 +128,6 @@ public class serviceProducto {
                 p7.setUsuarioRegistrador(admin);
                 p7.setCategoria("Tecnología");
                 productosDefault.add(p7);
-
-                // Producto 8
-                Producto p8 = new Producto();
-                p8.setNombre("Logitech MX Master 3S");
-                p8.setDescripcion("Ratón inalámbrico de alto rendimiento con sensor de 8K DPI y clics silenciosos.");
-                p8.setPrecio(129.0);
-
-                p8.setConfirmado(true);
-                p8.setUsuarioRegistrador(admin);
-                p8.setCategoria("Tecnología");
-                productosDefault.add(p8);
-
-                // Producto 9
-                Producto p9 = new Producto();
-                p9.setNombre("Samsung Galaxy S24 Ultra");
-                p9.setDescripcion("Pantalla Dynamic AMOLED 2X de 6.8\", S Pen integrado, cámara de 200MP y Titanio.");
-                p9.setPrecio(1459.0);
-
-                p9.setConfirmado(true);
-                p9.setUsuarioRegistrador(admin);
-                p9.setCategoria("Tecnología");
-                productosDefault.add(p9);
-
-                // Producto 10
-                Producto p10 = new Producto();
-                p10.setNombre("Nintendo Switch OLED");
-                p10.setDescripcion(
-                        "Consola con pantalla OLED de 7 pulgadas, base con puerto LAN por cable y 64GB de memoria.");
-                p10.setPrecio(349.0);
-
-                p10.setConfirmado(true);
-                p10.setUsuarioRegistrador(admin);
-                productosDefault.add(p10);
-
-                // Producto 11
-                Producto p11 = new Producto();
-                p11.setNombre("ASUS ROG Zephyrus G14");
-                p11.setDescripcion("Portátil Gaming de 14\", Ryzen 9, RTX 4070, 32GB RAM, 1TB SSD. Potencia compacta.");
-                p11.setPrecio(2199.0);
-
-                p11.setConfirmado(true);
-                p11.setUsuarioRegistrador(admin);
-                p11.setCategoria("Tecnología");
-                productosDefault.add(p11);
-
-                // Producto 12 (Alimentación)
-                Producto p12 = new Producto();
-                p12.setNombre("Arroz Brillante Sabroz 1kg");
-                p12.setDescripcion("Arroz redondo que siempre queda en su punto. Ideal para paellas y guisos.");
-                p12.setPrecio(2.15);
-
-                p12.setConfirmado(true);
-                p12.setUsuarioRegistrador(admin);
-                p12.setSupermercado("Mercadona");
-                p12.setCategoria("Alimentación");
-                productosDefault.add(p12);
 
                 // Producto 13 (Bebidas)
                 Producto p13 = new Producto();
@@ -283,6 +213,7 @@ public class serviceProducto {
 
     // Te da la información de un producto por su ID.
     public ProductoDTO obtenerProductoDTO(Long id) {
+        if (id == null) return null;
         Producto p = repoProducto.findById(id).orElse(null);
         return convertirAProductoDTO(p);
     }
@@ -313,11 +244,15 @@ public class serviceProducto {
     }
 
     public List<ProductoDTO> listarProductosDTOPuntuacion() {
-        return repoProducto.findAllProductosConPuntuacion();
+        return repoProducto.findAll().stream()
+                .map(this::convertirAProductoDTO)
+                .collect(Collectors.toList());
     }
 
     public List<ProductoDTO> buscarProductosDTOPuntuacion(String q) {
-        return repoProducto.buscarProductosConPuntuacion(q);
+        return repoProducto.findByNombreContainingIgnoreCase(q).stream()
+                .map(this::convertirAProductoDTO)
+                .collect(Collectors.toList());
     }
 
     // ---------------- Guardar ----------------
@@ -329,7 +264,9 @@ public class serviceProducto {
         producto.setPrecio(dto.getPrecio());
         producto.setSupermercado(dto.getSupermercado());
         producto.setImagenUrl(dto.getImagenUrl());
-        producto.setCategoria(dto.getCategoria());
+        if (dto.getCategoria() != null) {
+            producto.setCategoria(dto.getCategoria());
+        }
         producto.setUsuarioRegistrador(usuario);
         producto.setConfirmado(false);
 
@@ -341,6 +278,7 @@ public class serviceProducto {
     // Confirmar producto
     // Marca un producto como confirmado (solo para administradores).
     public ProductoDTO confirmarProducto(Long realId, Usuario admin) {
+        if (realId == null) throw new RuntimeException("ID de producto no válido");
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
         }
@@ -356,6 +294,7 @@ public class serviceProducto {
     // Rechazar producto
     // Borra un producto que no ha sido aceptado (solo para administradores).
     public boolean rechazarProducto(Long realId, Usuario admin) {
+        if (realId == null) return false;
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para rechazar este producto");
         }
@@ -371,6 +310,7 @@ public class serviceProducto {
     // Cambia los datos de un producto existente.
     @Transactional
     public ProductoDTO actualizarProducto(Long id, CrearProductoDTO dto, Usuario usuario) {
+        if (id == null) return null;
         Producto producto = repoProducto.findById(id).orElse(null);
         if (producto == null)
             return null;
@@ -392,6 +332,7 @@ public class serviceProducto {
 
     // Borra un producto del catálogo por su ID.
     public boolean eliminarProducto(Long id) {
+        if (id == null) return false;
         if (repoProducto.existsById(id)) {
             repoProducto.deleteById(id);
             return true;

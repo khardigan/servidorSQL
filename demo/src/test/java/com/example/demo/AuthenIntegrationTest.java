@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import org.springframework.test.context.ActiveProfiles;
@@ -36,22 +37,25 @@ import org.springframework.security.test.context.support.WithMockUser;
 @Transactional
 public class AuthenIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockBean
-    private serviceJWT jwtService;
+        @MockBean
+        private serviceJWT jwtService;
 
-    @MockBean
-    private SecurityFilterChain securityFilterChain; // <--- SALTA la seguridad
+        @MockBean
+        private com.example.demo.proyecto.repository.repositoryLista repoLista;
 
-    @Autowired
-    private repositoryUsuario repoUsuario;
-    @Autowired
-    private repositoryProducto repoProducto;
+        @Autowired
+        private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private repositoryUsuario repoUsuario;
+        @Autowired
+        private repositoryProducto repoProducto;
+
+        @Autowired
+        private ObjectMapper objectMapper;
 
         @Test
         public void registrarUsuario_integracion_ok() throws Exception {
@@ -61,12 +65,13 @@ public class AuthenIntegrationTest {
                 dto.setContraseña("123456");
                 dto.setRol("USER");
 
+                when(jwtService.generarToken(anyString(), anyString(), any())).thenReturn("mocked-token");
+
                 mockMvc.perform(post("/usuarios/registrar")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(dto)))
                                 .andExpect(status().isCreated());
 
-                // 3. Verificación en la base de datos
                 boolean existe = repoUsuario.findAll().stream()
                                 .anyMatch(u -> u.getNombre().equals("Pepe Perez"));
 
@@ -95,22 +100,23 @@ public class AuthenIntegrationTest {
                                 .andExpect(status().isOk());
         }
 
-      @Test
+        @Test
         public void login_integracion_fallido_credencialesMalas() throws Exception {
-        // Creamos un usuario válido en la base de datos
-        Usuario u = new Usuario();
-        u.setNombre("usuario_valido");
-        u.setContraseña("123456");  
-        u.setRol("USER");            
-        u.setEmail("usuario@correo.com"); 
-        repoUsuario.save(u);
+                // Creamos un usuario válido en la base de datos con contraseña cifrada
+                Usuario u = new Usuario();
+                u.setNombre("usuario_valido");
+                u.setContraseña(passwordEncoder.encode("123456"));
+                u.setRol("USER");
+                u.setEmail("usuario@correo.com");
+                u.setActivo(true);
+                repoUsuario.save(u);
 
-        // Intentamos login con contraseña incorrecta
-        String jsonBody = "{\"nombre\":\"usuario_valido\", \"password\":\"mal\"}";
-        mockMvc.perform(post("/usuarios/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonBody))
-                .andExpect(status().isUnauthorized());
+                // Intentamos login con contraseña incorrecta
+                String jsonBody = "{\"nombre\":\"usuario_valido\", \"password\":\"mal\"}";
+                mockMvc.perform(post("/usuarios/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonBody))
+                                .andExpect(status().isUnauthorized());
         }
 
 }

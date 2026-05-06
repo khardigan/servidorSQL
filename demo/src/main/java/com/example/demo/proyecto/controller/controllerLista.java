@@ -21,6 +21,7 @@ import com.example.demo.proyecto.dto.CrearListaRequestDTO;
 import com.example.demo.proyecto.dto.UnirseListaRequestDTO;
 import com.example.demo.proyecto.dto.ListaDTO;
 import com.example.demo.proyecto.dto.ListaDetalleDTO;
+import com.example.demo.proyecto.model.Lista;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryUsuario;
 import com.example.demo.proyecto.service.serviceJWT;
@@ -83,8 +84,8 @@ public class controllerLista {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuarioDueno = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuarioDueno = repoUsuario.findById(usuarioId).orElse(null);
         if (usuarioDueno == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
@@ -110,7 +111,8 @@ public class controllerLista {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Lista no encontrada");
 
             if (!"ADMIN".equalsIgnoreCase(rol)) {
-                Usuario usuarioAuth = encontrarUsuarioPorNombre(nombreUsuario);
+                Long usuarioId = jwtService.obtenerId(token);
+                Usuario usuarioAuth = repoUsuario.findById(usuarioId).orElse(null);
                 if (usuarioAuth == null || !existente.getUsuarioDuenoId().equals(usuarioAuth.getId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body("Solo el dueño o admin pueden actualizar esta lista");
@@ -140,7 +142,18 @@ public class controllerLista {
 
         if (!"ADMIN".equalsIgnoreCase(rol)) {
             Long userId = jwtService.obtenerId(token);
-            if (userId == null || !lista.getUsuarioDuenoId().equals(userId))
+            boolean isOwner = lista.getUsuarioDuenoId().equals(userId);
+            boolean isOriginalCreator = false;
+
+            Lista realLista = service.buscarListaPorId(id);
+            if (realLista != null && "ListasPublicas".equals(realLista.getUsuarioDueno().getNombre())) {
+                String metaCheck = "id=" + userId + ",";
+                if (realLista.getNombre() != null && realLista.getNombre().contains(metaCheck)) {
+                    isOriginalCreator = true;
+                }
+            }
+
+            if (userId == null || (!isOwner && !isOriginalCreator))
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Solo el dueño o admin pueden eliminar esta lista");
         }
@@ -196,7 +209,18 @@ public class controllerLista {
 
         if (!"ADMIN".equalsIgnoreCase(rol)) {
             Long userId = jwtService.obtenerId(token);
-            if (userId == null || !lista.getUsuarioDuenoId().equals(userId)) {
+            boolean isOwner = lista.getUsuarioDuenoId().equals(userId);
+            boolean isOriginalCreator = false;
+
+            Lista realLista = service.buscarListaPorId(id);
+            if (realLista != null && "ListasPublicas".equals(realLista.getUsuarioDueno().getNombre())) {
+                String metaCheck = "id=" + userId + ",";
+                if (realLista.getNombre() != null && realLista.getNombre().contains(metaCheck)) {
+                    isOriginalCreator = true;
+                }
+            }
+
+            if (userId == null || (!isOwner && !isOriginalCreator)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Solo el dueño o admin pueden despublicar esta lista");
             }
@@ -215,8 +239,8 @@ public class controllerLista {
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuarioDestino = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuarioDestino = repoUsuario.findById(usuarioId).orElse(null);
         if (usuarioDestino == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
         }
@@ -280,8 +304,8 @@ public class controllerLista {
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuarioDestino = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuarioDestino = repoUsuario.findById(usuarioId).orElse(null);
         if (usuarioDestino == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
@@ -329,8 +353,8 @@ public class controllerLista {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuario = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuario = repoUsuario.findById(usuarioId).orElse(null);
         if (usuario == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
@@ -358,8 +382,8 @@ public class controllerLista {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
         }
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
-        Usuario usuario = encontrarUsuarioPorNombre(nombreUsuario);
+        Long usuarioId = jwtService.obtenerId(token);
+        Usuario usuario = repoUsuario.findById(usuarioId).orElse(null);
         if (usuario == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
 
@@ -375,12 +399,4 @@ public class controllerLista {
         }
     }
 
-    private Usuario encontrarUsuarioPorNombre(String nombre) {
-        if (nombre == null)
-            return null;
-        Optional<Usuario> opt = repoUsuario.findAll().stream()
-                .filter(u -> nombre.equals(u.getNombre()))
-                .findFirst();
-        return opt.orElse(null);
-    }
 }

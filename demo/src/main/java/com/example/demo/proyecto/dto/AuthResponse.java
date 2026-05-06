@@ -14,6 +14,7 @@ public class AuthResponse {
     // este el token jwt que se le envia al cliente
     private String token;
     private String nombre;
+    private String email;
     private String rol;
     private Long id;
 

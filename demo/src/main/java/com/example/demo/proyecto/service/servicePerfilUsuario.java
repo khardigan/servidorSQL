@@ -37,12 +37,21 @@ public class servicePerfilUsuario {
     // ---------------- BUSCAR ----------------
     // Busca un perfil por su ID.
     public PerfilUsario buscarPerfilPorId(Integer id) {
+        if (id == null)
+            return null;
         return repoPerfil.findById(id).orElse(null);
     }
 
     // Te da los datos del perfil en formato DTO.
     public PerfilUsuarioDTO obtenerPerfilDTO(Integer id) {
         PerfilUsario p = buscarPerfilPorId(id);
+        return convertirADTO(p);
+    }
+
+    public PerfilUsuarioDTO obtenerPerfilPorUsuarioId(Long usuarioId) {
+        if (usuarioId == null)
+            return null;
+        PerfilUsario p = repoPerfil.findByUsuarioId(usuarioId).orElse(null);
         return convertirADTO(p);
     }
 
@@ -71,7 +80,6 @@ public class servicePerfilUsuario {
         PerfilUsario perfil = repoPerfil.findById(id).orElse(null);
         if (perfil == null)
             return null;
-
 
         if (dtoRequest.getDescripcion() != null)
             perfil.setDescripcion(dtoRequest.getDescripcion());
@@ -108,6 +116,8 @@ public class servicePerfilUsuario {
     // ---------------- USUARIO DEL PERFIL ----------------
     // Te da el usuario que tiene ese perfil.
     public Usuario obtenerUsuarioDelPerfil(Integer id) {
+        if (id == null)
+            return null;
         PerfilUsario perfil = repoPerfil.findById(id).orElse(null);
         if (perfil == null)
             return null;
