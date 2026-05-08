@@ -24,8 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -105,22 +107,23 @@ public class DataSeeder implements CommandLineRunner {
             System.out.println("✔ Usuario sistema creado");
         }
 
-        // ===================== LIMPIEZA + CSV =====================
-        logger.info("Limpiando base de datos...");
-        try {
-            repoProducto.limpiarTablasHuerfanas();
-            repoProducto.deleteAll();
-            logger.info("OK limpieza");
-        } catch (Exception e) {
-            logger.warn("Aviso limpieza: " + e.getMessage());
+        // ===================== CARGAR EXISTENTES =====================
+        logger.info("Cargando productos existentes para evitar duplicados...");
+        Set<String> productosExistentes = new HashSet<>();
+        List<Object[]> datosExistentes = repoProducto.findAllNombresYSupermercados();
+        for (Object[] dato : datosExistentes) {
+            String n = (String) dato[0];
+            String s = (String) dato[1];
+            productosExistentes.add((n + "|" + s).toLowerCase());
         }
+        logger.info("Se han encontrado " + productosExistentes.size() + " productos ya en la base de datos.");
 
-        logger.info("Importando productos...");
-        cargarDesdeCsv("../../scrapeo/productos_dia.csv", "Dia");
-        cargarDesdeCsv("../../scrapeo/productos_mercadona.csv", "Mercadona");
+        logger.info("Importando nuevos productos...");
+        cargarDesdeCsv("../../scrapeo/productos_dia.csv", "Dia", productosExistentes);
+        cargarDesdeCsv("../../scrapeo/productos_mercadona.csv", "Mercadona", productosExistentes);
     }
 
-    private void cargarDesdeCsv(String csvPath, String supermercado) {
+    private void cargarDesdeCsv(String csvPath, String supermercado, Set<String> productosExistentes) {
         // Buscar el archivo en diferentes ubicaciones posibles
         Path archivoCSV = buscarArchivo(csvPath);
 
@@ -131,11 +134,8 @@ public class DataSeeder implements CommandLineRunner {
 
         logger.info("Importando desde: " + archivoCSV.toAbsolutePath() + " (" + supermercado + ")");
 
-        // 🔥 LIMPIEZA: Borrar productos antiguos de este supermercado para que solo
-        // queden los nuevos
-        repoProducto.deleteBySupermercado(supermercado);
-
         Map<String, Producto> mapaProductos = new java.util.HashMap<>();
+        int saltados = 0;
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(new FileInputStream(archivoCSV.toFile()), StandardCharsets.UTF_8))) {
@@ -166,6 +166,11 @@ public class DataSeeder implements CommandLineRunner {
 
                         String nombreNormalizado = nombre.length() > 100 ? nombre.substring(0, 100) : nombre;
                         String clave = (nombreNormalizado + "|" + supermercado).toLowerCase();
+
+                        if (productosExistentes.contains(clave)) {
+                            saltados++;
+                            continue;
+                        }
 
                         Producto p;
                         if (mapaProductos.containsKey(clave)) {
@@ -218,7 +223,10 @@ public class DataSeeder implements CommandLineRunner {
 
             if (!mapaProductos.isEmpty()) {
                 repoProducto.saveAll(mapaProductos.values());
-                logger.info("¡Se han importado " + mapaProductos.size() + " productos únicos de " + supermercado + "!");
+                logger.info("¡Se han importado " + mapaProductos.size() + " productos NUEVOS de " + supermercado + "!");
+            }
+            if (saltados > 0) {
+                logger.info("Se han saltado " + saltados + " productos que ya existían en " + supermercado);
             }
 
         } catch (Exception e) {

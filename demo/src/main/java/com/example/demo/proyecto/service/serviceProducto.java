@@ -211,11 +211,13 @@ public class serviceProducto {
                 .collect(Collectors.toList());
     }
 
-    // Te da la información de un producto por su ID.
+    // Te da la información completa de un producto por su ID (con comentarios y
+    // listas).
     public ProductoDTO obtenerProductoDTO(Long id) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
         Producto p = repoProducto.findById(id).orElse(null);
-        return convertirAProductoDTO(p);
+        return convertirAProductoDTOCompleto(p);
     }
 
     // Devuelve la lista de categorías únicas. Si no hay ninguna en BD, devuelve
@@ -278,7 +280,8 @@ public class serviceProducto {
     // Confirmar producto
     // Marca un producto como confirmado (solo para administradores).
     public ProductoDTO confirmarProducto(Long realId, Usuario admin) {
-        if (realId == null) throw new RuntimeException("ID de producto no válido");
+        if (realId == null)
+            throw new RuntimeException("ID de producto no válido");
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para confirmar este producto");
         }
@@ -294,7 +297,8 @@ public class serviceProducto {
     // Rechazar producto
     // Borra un producto que no ha sido aceptado (solo para administradores).
     public boolean rechazarProducto(Long realId, Usuario admin) {
-        if (realId == null) return false;
+        if (realId == null)
+            return false;
         if (!admin.getRol().equals("ADMIN") && !admin.getRol().equals("DISTRIBUTOR")) {
             throw new RuntimeException("No tienes permisos para rechazar este producto");
         }
@@ -310,7 +314,8 @@ public class serviceProducto {
     // Cambia los datos de un producto existente.
     @Transactional
     public ProductoDTO actualizarProducto(Long id, CrearProductoDTO dto, Usuario usuario) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
         Producto producto = repoProducto.findById(id).orElse(null);
         if (producto == null)
             return null;
@@ -332,17 +337,18 @@ public class serviceProducto {
 
     // Borra un producto del catálogo por su ID.
     public boolean eliminarProducto(Long id) {
-        if (id == null) return false;
+        if (id == null)
+            return false;
         if (repoProducto.existsById(id)) {
             repoProducto.deleteById(id);
             return true;
         }
         return false;
     }
-
     // ---------------- Conversión a DTO ----------------
 
-    // Pasa el producto del modelo a formato DTO.
+    // Pasa el producto del modelo a formato DTO LIGERO (para listados masivos).
+    // NO accede a comentarios ni listas para evitar el problema N+1.
     private ProductoDTO convertirAProductoDTO(Producto p) {
         if (p == null)
             return null;
@@ -357,6 +363,25 @@ public class serviceProducto {
         dto.setSupermercado(p.getSupermercado());
         dto.setImagenUrl(p.getImagenUrl());
         dto.setCategoria(p.getCategoria());
+
+        // En listados masivos, ponemos valores neutros para no disparar N+1 queries.
+        // El detalle completo (con comentarios) se carga solo cuando se pide un
+        // producto por ID.
+        dto.setMediaPuntuacion(0.0);
+        dto.setTotalComentarios(0L);
+        dto.setListas(List.of());
+        dto.setComentarios(List.of());
+
+        return dto;
+    }
+
+    // Versión COMPLETA del DTO: carga comentarios y listas. Solo se usa al obtener
+    // un producto por ID, nunca en listados masivos.
+    private ProductoDTO convertirAProductoDTOCompleto(Producto p) {
+        if (p == null)
+            return null;
+
+        ProductoDTO dto = convertirAProductoDTO(p);
 
         double sum = 0.0;
         int count = 0;
@@ -386,16 +411,6 @@ public class serviceProducto {
                                     c.getPuntuacion(),
                                     c.getUsuario() != null ? c.getUsuario().getId() : null,
                                     c.getProductoId());
-                            // Also map user name for display purposes (this is commonly needed by frontend
-                            // for comments)
-                            if (c.getUsuario() != null) {
-                                // We don't have a usuarioNombre field in ComentarioDTO? Wait, let's just pass
-                                // the ID. The frontend seems to use `c.usuarioNombre || 'Usuario'` in
-                                // `producto.html`.
-                                // Oh! `ProductoDTO` mapping needs to provide `usuarioNombre`.
-                                // We can't add it to ComentarioDTO without modifying it again. Let's just
-                                // create it with what we have.
-                            }
                             return cdto;
                         }).collect(Collectors.toList())
                         : List.of());

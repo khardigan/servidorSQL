@@ -3,6 +3,10 @@ package com.example.demo.proyecto.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,6 +19,7 @@ public class ProductoPropio {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnore
     private Usuario usuario;
 
     @NotBlank(message = "El nombre es obligatorio")
@@ -28,6 +33,7 @@ public class ProductoPropio {
     /* id lista, puede estar vacia */
     @ManyToOne
     @JoinColumn(name = "lista_id", nullable = true)
+    @JsonBackReference(value = "lista-producto-propio")
     private Lista lista;
 
     private String supermercado;

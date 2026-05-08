@@ -53,7 +53,7 @@ public class PerfilUsario {
 
     @OneToOne
     @JoinColumn(name = "usuario_id")
-    @JsonBackReference
+    @JsonBackReference(value = "usuario-perfil")
     private Usuario usuario;
 
 }

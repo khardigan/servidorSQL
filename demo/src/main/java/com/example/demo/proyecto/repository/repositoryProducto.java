@@ -25,4 +25,7 @@ public interface repositoryProducto extends JpaRepository<Producto, Long> {
 
        @org.springframework.transaction.annotation.Transactional
        void deleteBySupermercado(String supermercado);
+
+       @Query("SELECT p.nombre, p.supermercado FROM Producto p")
+       List<Object[]> findAllNombresYSupermercados();
 }

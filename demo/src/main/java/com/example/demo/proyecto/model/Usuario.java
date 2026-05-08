@@ -9,6 +9,7 @@ import java.util.List;
 import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
@@ -74,17 +75,19 @@ public class Usuario {
     // @Column(name = "comentario", length = 1000)
     // private List<String> comentarios = new java.util.ArrayList<>();
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "usuario-comentarios")
     private List<Comentario> comentarios = new ArrayList<>();
 
     @OneToMany(mappedBy = "usuarioRegistrador", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonManagedReference(value = "usuario-productos")
     private List<Producto> listaProductosSubidos;
 
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonManagedReference(value = "usuario-perfil")
     private PerfilUsario perfilUsuario;
 
     @OneToMany(mappedBy = "usuarioDueno")
+    @JsonManagedReference(value = "usuario-listas")
     private List<Lista> listasCreadas;
 
     @ManyToMany(mappedBy = "usuariosCompartida")

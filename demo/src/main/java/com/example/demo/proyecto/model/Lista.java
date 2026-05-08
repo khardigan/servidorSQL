@@ -2,7 +2,9 @@ package com.example.demo.proyecto.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import jakarta.persistence.CascadeType;
@@ -38,6 +40,7 @@ public class Lista {
 
     @ManyToOne
     @JoinColumn(name = "usuario_duenio_id")
+    @JsonBackReference(value = "usuario-listas")
     private Usuario usuarioDueno;
 
     @ManyToMany
@@ -45,9 +48,11 @@ public class Lista {
     private List<Usuario> usuariosCompartida;
 
     @OneToMany(mappedBy = "lista", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "lista-producto-lista")
     private List<ListaProducto> productosEnLista;
 
     @OneToMany(mappedBy = "lista", cascade = CascadeType.PERSIST)
+    @JsonManagedReference(value = "lista-producto-propio")
     private List<ProductoPropio> productoPropios;
 
     @Column(name = "codigo", unique = true)
