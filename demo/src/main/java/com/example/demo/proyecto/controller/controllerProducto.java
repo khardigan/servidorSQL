@@ -231,14 +231,11 @@ public class controllerProducto {
         return null;
     }
 
-    // Busca el usuario por nombre.
-    private Usuario encontrarUsuarioPorNombre(String nombre) {
-        if (nombre == null)
+    // Busca el usuario por email (que es el subject del token).
+    private Usuario encontrarUsuarioPorNombre(String email) {
+        if (email == null)
             return null;
-        Optional<Usuario> opt = repoUsuario.findAll().stream()
-                .filter(u -> nombre.equals(u.getNombre()))
-                .findFirst();
-        return opt.orElse(null);
+        return repoUsuario.findByEmail(email);
     }
 
     @GetMapping("/mediaPuntuacionComentarios")

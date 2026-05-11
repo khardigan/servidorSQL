@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import com.example.demo.proyecto.dto.ProductoDTO;
 import com.example.demo.proyecto.dto.ComentarioDTO;
 import com.example.demo.proyecto.dto.CrearProductoDTO;
-
+import com.example.demo.proyecto.model.Comentario;
 import com.example.demo.proyecto.model.Producto;
 import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryProducto;
@@ -358,7 +358,10 @@ public class serviceProducto {
         dto.setNombre(p.getNombre());
         dto.setDescripcion(p.getDescripcion());
         dto.setPrecio(p.getPrecio());
-        dto.setUsuarioRegistradorId(p.getUsuarioRegistrador() != null ? p.getUsuarioRegistrador().getId() : null);
+        if (p.getUsuarioRegistrador() != null) {
+            dto.setUsuarioRegistradorId(p.getUsuarioRegistrador().getId());
+            dto.setNombreRegistrador(p.getUsuarioRegistrador().getNombre());
+        }
         dto.setConfirmado(Boolean.TRUE.equals(p.getConfirmado()));
         dto.setSupermercado(p.getSupermercado());
         dto.setImagenUrl(p.getImagenUrl());
@@ -387,7 +390,7 @@ public class serviceProducto {
         int count = 0;
         if (p.getComentarios() != null) {
             count = p.getComentarios().size();
-            for (com.example.demo.proyecto.model.Comentario c : p.getComentarios()) {
+            for (Comentario c : p.getComentarios()) {
                 if (c.getPuntuacion() != null) {
                     sum += c.getPuntuacion();
                 }
@@ -411,6 +414,9 @@ public class serviceProducto {
                                     c.getPuntuacion(),
                                     c.getUsuario() != null ? c.getUsuario().getId() : null,
                                     c.getProductoId());
+                            if (c.getUsuario() != null) {
+                                cdto.setNombreUsuario(c.getUsuario().getNombre());
+                            }
                             return cdto;
                         }).collect(Collectors.toList())
                         : List.of());

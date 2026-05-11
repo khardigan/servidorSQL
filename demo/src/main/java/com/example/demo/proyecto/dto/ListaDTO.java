@@ -10,8 +10,11 @@ public class ListaDTO {
     private List<Long> productosEnLista;      // IDs de productos
     private String nombre;
     private boolean publicada;
+    private String nombreDueno;
 
     // Getters y Setters
+    public String getNombreDueno() { return nombreDueno; }
+    public void setNombreDueno(String nombreDueno) { this.nombreDueno = nombreDueno; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public boolean isPublicada() { return publicada; }

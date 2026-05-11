@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 import com.example.demo.proyecto.dto.AuthResponse;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
@@ -97,23 +99,26 @@ public class controllerUsuario {
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);
-        Long idClaim;
+        Long tokenId;
         try {
-            idClaim = serviceJWT.obtenerId(token); // devuelve String con el ID
+            tokenId = serviceJWT.obtenerId(token);
         } catch (ExpiredJwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token expirado");
         }
 
-        if (idClaim == null) {
+        if (tokenId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o sin ID");
         }
 
-        Long tokenId = idClaim;
         String rol = serviceJWT.obtenerRol(token);
 
         if (!"ADMIN".equalsIgnoreCase(rol) && !tokenId.equals(id)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("No tienes permisos para ver este usuario");
+            UsuarioDTO redacted = serviceAuthen.obtenerUsuarioDTO(id);
+            if (redacted != null) {
+                redacted.setEmail("********@***.***");
+                return ResponseEntity.ok(redacted);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
@@ -123,36 +128,33 @@ public class controllerUsuario {
     }
 
     // --------- Mirar Perfil --------------------
-    // Te da el perfil de un usuario. (Tiene que recibir el ID y el Token)
     @GetMapping("/{id}/perfil")
     public ResponseEntity<?> obtenerPerfilDelUsuario(@PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
 
         String token = validarToken(authHeader);
         if (token == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Token inválido o ausente");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
         }
 
         String rol = serviceJWT.obtenerRol(token);
         Long idToken = serviceJWT.obtenerId(token);
 
         if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("No tienes permisos para ver este perfil");
-        }
-
-        UsuarioDTO usuario = serviceAuthen.obtenerUsuarioDTO(id);
-        if (usuario == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            PerfilUsuarioDTO p = servicePerfil.obtenerPerfilPorUsuarioId(id);
+            if (p != null) {
+                // Devolvemos el perfil pero censurado para que el navegador no dé error 403
+                p.setEmail("********@***.***");
+                p.setTelefono("*********");
+                return ResponseEntity.ok(p);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         PerfilUsuarioDTO perfil = servicePerfil.obtenerPerfilPorUsuarioId(id);
-
         if (perfil == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado para el usuario");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
         }
-
         return ResponseEntity.ok(perfil);
     }
 
@@ -164,7 +166,9 @@ public class controllerUsuario {
         serviceAuthen.crearUsuarioDesdeDTO(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("mensaje", "Usuario registrado. Revisa tu correo para confirmar la cuenta."));
+                .body(Map.of(
+                        "mensaje", "Usuario registrado. Revisa tu correo para confirmar la cuenta.",
+                        "message", "Usuario registrado. Revisa tu correo para confirmar la cuenta."));
     }
 
     // ----------------- VERIFICAR EMAIL -----------------
@@ -183,7 +187,7 @@ public class controllerUsuario {
     // Cambia los datos de un usuario. (Tiene que recibir el ID, los datos nuevos y
     // el Token)
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody Usuario datos,
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, Object> datos,
             @RequestHeader("Authorization") String authHeader) {
 
         String token = validarToken(authHeader);
@@ -193,31 +197,37 @@ public class controllerUsuario {
         }
         String rol = serviceJWT.obtenerRol(token);
         Long idToken = serviceJWT.obtenerId(token);
+
+        // LOGS DE DEBUG PARA EL USUARIO
+        System.out
+                .println("PETICION ACTUALIZAR: ID destino=" + id + ", Usuario logueado ID=" + idToken + ", Rol=" + rol);
+
         if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(id)) {
+            System.out.println("ACCESO DENEGADO (403): El usuario no es ADMIN ni es el dueño del perfil.");
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Solo el propio usuario o admin pueden actualizar este usuario");
         }
 
-        UsuarioDTO actualizado = serviceAuthen.actualizarUsuario(id, datos);
+        UsuarioDTO actualizado = serviceAuthen.actualizarUsuarioDesdeMapa(id, datos);
         return ResponseEntity.ok(actualizado);
     }
 
     // ----------------- ELIMINAR USUARIO -----------------
     // Borra a un usuario. (Tiene que recibir el ID y el Token)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id, @RequestHeader("Authorization") String authHeader) {
-        System.out.println("PETICION RECIBIDA: DELETE /usuarios/" + id);
-        String token = serviceJWT.limpiarToken(authHeader);
-
-        if (token == null || !serviceJWT.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Token inválido o ausente");
+    public ResponseEntity<?> eliminar(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado");
         }
 
-        String rol = serviceJWT.obtenerRol(token);
-        Long idToken = serviceJWT.obtenerId(token);
+        String rol = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(java.util.stream.Collectors.joining(","));
 
-        if (!"ADMIN".equalsIgnoreCase(rol)) {
+        System.out
+                .println("PETICION DELETE USUARIO: " + id + " por " + authentication.getName() + " con roles: " + rol);
+
+        if (!rol.contains("ROLE_ADMIN") && !rol.contains("ADMIN")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
         }
 

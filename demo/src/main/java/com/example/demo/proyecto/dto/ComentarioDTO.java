@@ -67,4 +67,14 @@ public class ComentarioDTO {
     public void setProductoId(Long productoId) {
         this.productoId = productoId;
     }
+
+    private String nombreUsuario;
+
+    public String getNombreUsuario() {
+        return nombreUsuario;
+    }
+
+    public void setNombreUsuario(String nombreUsuario) {
+        this.nombreUsuario = nombreUsuario;
+    }
 }

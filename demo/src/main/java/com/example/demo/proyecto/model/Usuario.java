@@ -86,12 +86,15 @@ public class Usuario {
     @JsonManagedReference(value = "usuario-perfil")
     private PerfilUsario perfilUsuario;
 
-    @OneToMany(mappedBy = "usuarioDueno")
+    @OneToMany(mappedBy = "usuarioDueno", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "usuario-listas")
     private List<Lista> listasCreadas;
 
     @ManyToMany(mappedBy = "usuariosCompartida")
     private List<Lista> listasCompartidas;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductoPropio> productosPropios;
 
     public Usuario() {
     }

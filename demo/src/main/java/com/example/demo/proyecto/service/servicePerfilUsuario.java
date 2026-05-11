@@ -61,12 +61,12 @@ public class servicePerfilUsuario {
     public PerfilUsuarioDTO guardarPerfil(CrearPerfilRequestDTO dto) {
         PerfilUsario perfil = new PerfilUsario();
         perfil.setNombrePerfil(dto.getNombrePerfil());
+        perfil.setEmail(dto.getEmail());
         perfil.setDescripcion(dto.getDescripcion());
         perfil.setSubtitulo(dto.getSubtitulo());
         perfil.setFechaNacimiento(dto.getFechaNacimiento());
         perfil.setEdad(dto.getEdad());
         perfil.setResidencia(dto.getResidencia());
-        perfil.setEmail(dto.getEmail());
         perfil.setTelefono(dto.getTelefono());
 
         PerfilUsario guardado = repoPerfil.save(perfil);
@@ -137,7 +137,9 @@ public class servicePerfilUsuario {
         dto.setFechaNacimiento(p.getFechaNacimiento());
         dto.setEdad(p.getEdad());
         dto.setResidencia(p.getResidencia());
-        dto.setEmail(p.getEmail());
+        // Fallback al email del usuario si el del perfil está vacío
+        dto.setEmail(p.getEmail() != null ? p.getEmail()
+                : (p.getUsuario() != null ? p.getUsuario().getEmail() : null));
         dto.setTelefono(p.getTelefono());
         dto.setIdPerfil(p.getId()); // añadir el id Integer al DTO
         return dto;

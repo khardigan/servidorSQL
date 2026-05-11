@@ -1,5 +1,5 @@
 package com.example.demo.proyecto.dto;
- 
+
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -16,7 +16,7 @@ public class CrearProductoDTO {
     private String nombre;
 
     @NotBlank(message = "La descripción no puede estar vacía")
-    @Length(min = 5, max = 300, message = "La descripción debe tener entre 5 y 300 caracteres")
+    @Length(min = 3, max = 300, message = "La descripción debe tener entre 3 y 300 caracteres")
     private String descripcion;
 
     @NotNull(message = "El precio es obligatorio")

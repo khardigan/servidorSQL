@@ -83,6 +83,7 @@ public class controllerPerfilUsuario {
         // 4️⃣ Crear perfil usando la instancia correcta del service
         try {
             PerfilUsuarioDTO creado = service.guardarPerfil(perfilDTO);
+            creado.setEmail(perfilDTO.getEmail());
             return ResponseEntity.status(HttpStatus.CREATED).body(creado);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

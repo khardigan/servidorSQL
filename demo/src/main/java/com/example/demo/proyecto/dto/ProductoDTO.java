@@ -18,6 +18,7 @@ public class ProductoDTO {
     private Double mediaPuntuacion;
     private Long totalComentarios;
     private List<ComentarioDTO> comentarios;
+    private String nombreRegistrador;
 
     // Constructor vacío (necesario para frameworks)
     public ProductoDTO() {
@@ -134,6 +135,14 @@ public class ProductoDTO {
 
     public void setImagenUrl(String imagenUrl) {
         this.imagenUrl = imagenUrl;
+    }
+
+    public String getNombreRegistrador() {
+        return nombreRegistrador;
+    }
+
+    public void setNombreRegistrador(String nombreRegistrador) {
+        this.nombreRegistrador = nombreRegistrador;
     }
 
     public String getCategoria() {

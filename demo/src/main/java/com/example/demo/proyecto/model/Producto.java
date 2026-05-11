@@ -42,7 +42,7 @@ public class Producto {
     private String nombre;
 
     @NotBlank(message = "La descripcion no puede estar vacia")
-    @Length(min = 5, max = 300, message = "El minimo de caracteres es 5 y el maximo es 300")
+    @Length(min = 3, max = 300, message = "El minimo de caracteres es 3 y el maximo es 300")
     private String descripcion;
     @NotNull(message = "El precio no puede ser nulo")
     @Positive(message = "El precio debe ser positivo")
@@ -62,6 +62,7 @@ public class Producto {
     private List<ListaProducto> listas;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "producto-comentarios")
     private List<Comentario> comentarios;
 
     public void setConfirmado(boolean confirmado) {

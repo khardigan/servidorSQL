@@ -247,31 +247,90 @@ public class serviceAuthen {
         return convertirAUsuarioDTO(usuario);
     }
 
+    // Nuevo método para actualización parcial desde un Mapa (evita errores de
+    // Jackson)
+    public UsuarioDTO actualizarUsuarioDesdeMapa(Long id, java.util.Map<String, Object> datos) {
+        Usuario usuario = repoUsuario.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // PROTECCIÓN SUPER-ADMIN
+        if ("admin@gmail.com".equalsIgnoreCase(usuario.getEmail()) && datos.containsKey("rol")) {
+            String nuevoRol = (String) datos.get("rol");
+            if (!"ADMIN".equalsIgnoreCase(nuevoRol)) {
+                throw new RuntimeException("No se puede degradar el rol del Administrador principal");
+            }
+        }
+
+        if (datos.containsKey("nombre")) {
+            usuario.setNombre((String) datos.get("nombre"));
+        }
+        if (datos.containsKey("email")) {
+            if (!"admin@gmail.com".equalsIgnoreCase(usuario.getEmail())) {
+                usuario.setEmail((String) datos.get("email"));
+            }
+        }
+        if (datos.containsKey("rol")) {
+            usuario.setRol((String) datos.get("rol"));
+        }
+        if (datos.containsKey("activo")) {
+            usuario.setActivo((Boolean) datos.get("activo"));
+        }
+        if (datos.containsKey("contraseña")) {
+            usuario.setContraseña(passwordEncoder.encode((String) datos.get("contraseña")));
+        }
+
+        repoUsuario.save(usuario);
+        return convertirAUsuarioDTO(usuario);
+    }
+
+    @Transactional
     public Boolean eliminarUsuario(Long id) {
         if (id == null)
             return false;
         Usuario usuario = repoUsuario.findById(id).orElse(null);
-        boolean eliminado = true;
         if (usuario == null) {
             throw new RuntimeException("Usuario no encontrado");
         }
 
+        // 1. Limpiar colaboraciones en listas compartidas (ManyToMany)
+        // Necesitamos eliminar al usuario de cada lista en la que colabora
+        if (usuario.getListasCompartidas() != null) {
+            for (Lista lista : new ArrayList<>(usuario.getListasCompartidas())) {
+                lista.getUsuariosCompartida().remove(usuario);
+                repoLista.save(lista);
+            }
+            usuario.getListasCompartidas().clear();
+        }
+
+        // 2. Ahora ya podemos borrar al usuario (las listas que posee se borrarán por
+        // CascadeType.ALL)
         repoUsuario.delete(usuario);
-        return eliminado;
+        return true;
     }
 
+    @Transactional
     public Boolean eliminarTodosLosUsuarios() {
-        boolean eliminado = true;
         List<Usuario> usuarios = repoUsuario.findAll();
         if (usuarios.isEmpty()) {
             throw new RuntimeException("No hay usuarios para eliminar");
         }
 
+        // Limpiar todas las colaboraciones en listas compartidas para todos los
+        // usuarios
+        List<Lista> todasLasListas = repoLista.findAll();
+        for (Lista lista : todasLasListas) {
+            if (lista.getUsuariosCompartida() != null) {
+                lista.getUsuariosCompartida().clear();
+                repoLista.save(lista);
+            }
+        }
+
         repoUsuario.deleteAll(usuarios);
-        return eliminado;
+        return true;
     }
 
     // ===================== JWT CENTRALIZADO =====================
+    // esta funcion hace : recibe el usuario y construye el response que contiene el
+    // token, el nombre, el email, el rol y el id
     private AuthResponse buildResponse(Usuario u) {
 
         String token = jwtService.generarToken(
@@ -293,7 +352,6 @@ public class serviceAuthen {
             throw new RuntimeException("ID no válido para renovación");
         }
         Usuario usuario = repoUsuario.findById(id).orElse(null);
-        // Usuario usuario = repoUsuario.findByEmail(nombre);
 
         if (usuario == null || !Boolean.TRUE.equals(usuario.getActivo())) {
             throw new RuntimeException("Usuario no encontrado o no verificado");

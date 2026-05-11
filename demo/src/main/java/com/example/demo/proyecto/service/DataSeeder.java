@@ -5,10 +5,17 @@ import jakarta.transaction.Transactional;
 import com.example.demo.proyecto.model.PerfilUsario;
 import com.example.demo.proyecto.model.Producto;
 import com.example.demo.proyecto.model.Usuario;
+import com.example.demo.proyecto.model.Lista;
+import com.example.demo.proyecto.model.Comentario;
+import com.example.demo.proyecto.model.ListaProducto;
 import com.example.demo.proyecto.repository.repositoryLista;
 import com.example.demo.proyecto.repository.repositoryProducto;
 import com.example.demo.proyecto.repository.repositoryUsuario;
+import com.example.demo.proyecto.repository.repositoryComentario;
+import com.example.demo.proyecto.repository.repositoryPerfilUsuario;
+import com.example.demo.proyecto.repository.repositoryListaProducto;
 
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -36,15 +43,24 @@ public class DataSeeder implements CommandLineRunner {
     private final repositoryUsuario repoUsuario;
     private final repositoryProducto repoProducto;
     private final repositoryLista repoLista;
+    private final repositoryComentario repoComentario;
+    private final repositoryPerfilUsuario repoPerfil;
+    private final repositoryListaProducto repoListaProducto;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(repositoryUsuario repoUsuario,
             repositoryProducto repoProducto,
             repositoryLista repoLista,
+            repositoryComentario repoComentario,
+            repositoryPerfilUsuario repoPerfil,
+            repositoryListaProducto repoListaProducto,
             PasswordEncoder passwordEncoder) {
         this.repoUsuario = repoUsuario;
         this.repoProducto = repoProducto;
         this.repoLista = repoLista;
+        this.repoComentario = repoComentario;
+        this.repoPerfil = repoPerfil;
+        this.repoListaProducto = repoListaProducto;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -53,12 +69,13 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // ===================== ADMIN =====================
-        Usuario admin = repoUsuario.findByEmail("admin@example.com");
+        Usuario admin = repoUsuario.findByEmail("admin@gmail.com");
+        boolean perfilAdminExiste = repoPerfil.existsByNombrePerfil("Administrador");
 
-        if (admin == null) {
+        if (admin == null && !perfilAdminExiste) {
             admin = new Usuario();
             admin.setNombre("admin");
-            admin.setEmail("admin@example.com");
+            admin.setEmail("admin@gmail.com");
             admin.setContraseña(passwordEncoder.encode("admin123"));
             admin.setRol("ADMIN");
             admin.setFechaRegistro(LocalDate.now());
@@ -76,14 +93,29 @@ public class DataSeeder implements CommandLineRunner {
 
             admin = repoUsuario.save(admin);
             System.out.println("✔ Admin creado");
+        } else if (admin != null) {
+            // Aseguramos que el admin existente tenga el rol ADMIN
+            if (!"ADMIN".equals(admin.getRol())) {
+                admin.setRol("ADMIN");
+                repoUsuario.save(admin);
+                System.out.println("✔ Rol de Admin actualizado a ADMIN");
+            } else {
+                System.out.println("✔ Admin ya existe y tiene rol ADMIN");
+            }
         } else {
-            System.out.println("✔ Admin ya existe");
+            // Caso donde el email no existe pero el nombre de perfil sí
+            repoPerfil.findByNombrePerfil("Administrador").ifPresent(p -> {
+                String emailDueno = (p.getUsuario() != null) ? p.getUsuario().getEmail() : "desconocido";
+                System.out
+                        .println("⚠ Admin NO creado: el perfil 'Administrador' ya pertenece al usuario: " + emailDueno);
+            });
         }
 
         // ===================== USUARIO SISTEMA =====================
         Usuario listasPublicas = repoUsuario.findByEmail("listaspublicas@example.com");
+        boolean perfilPublicoExiste = repoPerfil.existsByNombrePerfil("Listas Públicas");
 
-        if (listasPublicas == null) {
+        if (listasPublicas == null && !perfilPublicoExiste) {
             listasPublicas = new Usuario();
             listasPublicas.setNombre("ListasPublicas");
             listasPublicas.setEmail("listaspublicas@example.com");
@@ -105,6 +137,83 @@ public class DataSeeder implements CommandLineRunner {
             repoUsuario.save(listasPublicas);
 
             System.out.println("✔ Usuario sistema creado");
+        } else if (listasPublicas != null) {
+            System.out.println("✔ Usuario sistema ya existe (por email)");
+        } else {
+            System.out.println("⚠ Usuario sistema no creado: el perfil 'Listas Públicas' ya está en uso");
+        }
+
+        // ===================== USUARIO JOSE (NORMAL) =====================
+        Usuario jose = repoUsuario.findByEmail("jose@example.com");
+
+        if (jose == null) {
+            boolean perfilOcupado = repoPerfil.existsByNombrePerfil("Jose");
+            if (!perfilOcupado) {
+                jose = new Usuario();
+                jose.setNombre("Jose");
+                jose.setEmail("jose@example.com");
+                jose.setContraseña(passwordEncoder.encode("jose1234"));
+                jose.setRol("USER");
+                jose.setFechaRegistro(LocalDate.now());
+                jose.setActivo(true);
+
+                PerfilUsario perfilJose = new PerfilUsario();
+                perfilJose.setUsuario(jose);
+                perfilJose.setNombrePerfil("Jose");
+                perfilJose.setEmail(jose.getEmail());
+                perfilJose.setDescripcion("Cuenta de usuario normal");
+
+                jose.setPerfilUsuario(perfilJose);
+                jose.setListaProductosSubidos(new ArrayList<>());
+                jose.setListasCreadas(new ArrayList<>());
+                jose.setListasCompartidas(new ArrayList<>());
+
+                jose = repoUsuario.save(jose);
+                System.out.println("✔ Usuario Jose creado");
+
+                // Datos iniciales solo para un Jose recién creado
+                Lista listaJose = new Lista();
+                listaJose.setNombre("Mi Compra Semanal");
+                listaJose.setUsuarioDueno(jose);
+                listaJose.setCodigo(UUID.randomUUID().toString());
+                repoLista.save(listaJose);
+
+                Producto pPendiente = new Producto();
+                pPendiente.setNombre("Miel Artesanal de la Sierra");
+                pPendiente.setPrecio(6.50);
+                pPendiente.setConfirmado(false);
+                pPendiente.setCategoria("Alimentación General");
+                pPendiente.setSupermercado("Local");
+                pPendiente.setUsuarioRegistrador(jose);
+                repoProducto.save(pPendiente);
+
+                Comentario comentario = new Comentario();
+                comentario.setContenido("¡Increíble sabor! Producto super natural.");
+                comentario.setFecha(new java.sql.Date(System.currentTimeMillis()));
+                comentario.setPuntuacion(5.0);
+                comentario.setUsuario(jose);
+                comentario.setProducto(pPendiente);
+                repoComentario.save(comentario);
+
+                System.out.println("✔ Lista, producto y comentario inicial creados para Jose");
+            } else {
+                System.out.println("⚠ No se pudo crear a Jose: el nombre de perfil 'Jose' ya está en uso");
+            }
+        } else {
+            System.out.println("✔ Usuario Jose ya existe");
+
+            // Si Jose ya existe, nos aseguramos de que al menos tenga su lista base
+            // Si Jose ya existe, nos aseguramos de que al menos tenga su lista base
+            boolean tieneLista = repoLista.findByUsuarioDueno(jose).stream()
+                    .anyMatch(l -> "Mi Compra Semanal".equals(l.getNombre()));
+            if (!tieneLista) {
+                Lista l = new Lista();
+                l.setNombre("Mi Compra Semanal");
+                l.setUsuarioDueno(jose);
+                l.setCodigo(UUID.randomUUID().toString());
+                repoLista.save(l);
+                System.out.println("✔ Lista base recreada para Jose");
+            }
         }
 
         // ===================== CARGAR EXISTENTES =====================
@@ -121,6 +230,40 @@ public class DataSeeder implements CommandLineRunner {
         logger.info("Importando nuevos productos...");
         cargarDesdeCsv("../../scrapeo/productos_dia.csv", "Dia", productosExistentes);
         cargarDesdeCsv("../../scrapeo/productos_mercadona.csv", "Mercadona", productosExistentes);
+
+        // ===================== RELLENAR LISTA DE JOSE SI ESTÁ VACÍA
+        // =====================
+        jose = repoUsuario.findByEmail("jose@example.com");
+        if (jose != null) {
+            Lista listaJose = repoLista.findByUsuarioDueno(jose).stream()
+                    .filter(l -> "Mi Compra Semanal".equals(l.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (listaJose != null
+                    && (listaJose.getProductosEnLista() == null || listaJose.getProductosEnLista().isEmpty())) {
+                List<Producto> productosParaJose = repoProducto.findAll().stream()
+                        .filter(p -> "Dia".equals(p.getSupermercado()))
+                        .limit(10)
+                        .toList();
+
+                if (!productosParaJose.isEmpty()) {
+                    if (listaJose.getProductosEnLista() == null)
+                        listaJose.setProductosEnLista(new ArrayList<>());
+                    for (Producto p : productosParaJose) {
+                        ListaProducto lp = new ListaProducto();
+                        lp.setLista(listaJose);
+                        lp.setProducto(p);
+                        lp.setComprado(false);
+                        lp.setCantidad(1);
+                        repoListaProducto.save(lp);
+                        listaJose.getProductosEnLista().add(lp);
+                    }
+                    repoLista.save(listaJose);
+                    System.out.println("✔ Lista de Jose inicializada con 10 productos.");
+                }
+            }
+        }
     }
 
     private void cargarDesdeCsv(String csvPath, String supermercado, Set<String> productosExistentes) {
@@ -410,3 +553,5 @@ public class DataSeeder implements CommandLineRunner {
     }
 
 }
+
+// jajaja

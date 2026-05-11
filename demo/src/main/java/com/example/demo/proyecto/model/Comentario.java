@@ -25,12 +25,12 @@ public class Comentario {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    @JsonBackReference
+    @JsonBackReference(value = "usuario-comentarios")
     private Usuario usuario;
 
     @ManyToOne
     @JoinColumn(name = "producto_id")
-    @JsonBackReference
+    @JsonBackReference(value = "producto-comentarios")
     private Producto producto;
 
     public Comentario() {

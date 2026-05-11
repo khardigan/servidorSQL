@@ -59,7 +59,8 @@ public class serviceLista {
     // ---------------- BUSCAR ----------------
     // Busca una lista por su clave interna (ID).
     public Lista buscarListaPorId(Long id) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
         return repoLista.findById(id).orElse(null);
     }
 
@@ -117,7 +118,8 @@ public class serviceLista {
     @Transactional
     // Cambia los datos (nombre, productos, integrantes) de una lista.
     public ListaDTO actualizarLista(Long id, CrearListaRequestDTO request) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
         Lista lista = repoLista.findById(id).orElse(null);
         if (lista == null)
             return null;
@@ -267,7 +269,8 @@ public class serviceLista {
     @Transactional
     // Borra una lista por completo por su ID.
     public boolean eliminarLista(Long id) {
-        if (id == null) return false;
+        if (id == null)
+            return false;
         if (repoLista.existsById(id)) {
             repoLista.deleteById(id);
             return true;
@@ -321,9 +324,9 @@ public class serviceLista {
                         if (copia != null) {
                             copia.setPublicada(true);
                             // Metadata: id del dueño y ID de la lista original para poder encontrarla luego
-                            copia.setNombre(l.getNombre() + " |META:id=" + l.getUsuarioDueno().getId() + 
-                                           ",nick=" + l.getUsuarioDueno().getNombre() + 
-                                           ",orig=" + l.getCodLista() + "|");
+                            copia.setNombre(l.getNombre() + " |META:id=" + l.getUsuarioDueno().getId() +
+                                    ",nick=" + l.getUsuarioDueno().getNombre() +
+                                    ",orig=" + l.getCodLista() + "|");
                             repoLista.save(copia);
                         }
                     }
@@ -348,7 +351,8 @@ public class serviceLista {
     @Transactional
     // Cambia el nombre de la lista.
     public boolean actualizarNombre(Long id, String nuevoNombre) {
-        if (id == null) return false;
+        if (id == null)
+            return false;
         Lista l = repoLista.findById(id).orElse(null);
         if (l == null)
             return false;
@@ -444,7 +448,8 @@ public class serviceLista {
     @Transactional
     // Marca si ya has echado un producto al carro.
     public boolean marcarProductoComoComprado(Long listaId, Long productoId, boolean estado, Usuario usuario) {
-        if (listaId == null || productoId == null) return false;
+        if (listaId == null || productoId == null)
+            return false;
         Lista lista = repoLista.findById(listaId).orElse(null);
         if (lista == null)
             throw new RuntimeException("Lista no encontrada");
@@ -474,7 +479,8 @@ public class serviceLista {
     @Transactional
     // Cambia cuántas unidades quieres de un producto.
     public boolean actualizarCantidadProducto(Long listaId, Long productoId, int cantidad, Usuario usuario) {
-        if (listaId == null || productoId == null) return false;
+        if (listaId == null || productoId == null)
+            return false;
         Lista lista = repoLista.findById(listaId).orElse(null);
         if (lista == null)
             throw new RuntimeException("Lista no encontrada");
@@ -549,7 +555,10 @@ public class serviceLista {
             return null;
         ListaDTO dto = new ListaDTO();
         dto.setCodLista(l.getCodLista());
-        dto.setUsuarioDuenoId(l.getUsuarioDueno() != null ? l.getUsuarioDueno().getId() : null);
+        if (l.getUsuarioDueno() != null) {
+            dto.setUsuarioDuenoId(l.getUsuarioDueno().getId());
+            dto.setNombreDueno(l.getUsuarioDueno().getNombre());
+        }
         dto.setNombre(l.getNombre());
         dto.setPublicada(Boolean.TRUE.equals(l.getPublicada()));
         dto.setCodigo(l.getCodigo());

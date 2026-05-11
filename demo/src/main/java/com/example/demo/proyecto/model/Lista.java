@@ -51,7 +51,7 @@ public class Lista {
     @JsonManagedReference(value = "lista-producto-lista")
     private List<ListaProducto> productosEnLista;
 
-    @OneToMany(mappedBy = "lista", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "lista", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "lista-producto-propio")
     private List<ProductoPropio> productoPropios;
 
