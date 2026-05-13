@@ -69,11 +69,7 @@ public class Usuario {
     // Campos para verificación de email
     private String verificationToken;
 
-    // @ElementCollection
-    // @CollectionTable(name = "usuario_comentarios", joinColumns = @JoinColumn(name
-    // = "usuario_id"))
-    // @Column(name = "comentario", length = 1000)
-    // private List<String> comentarios = new java.util.ArrayList<>();
+ 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "usuario-comentarios")
     private List<Comentario> comentarios = new ArrayList<>();

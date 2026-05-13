@@ -12,6 +12,7 @@ public class PerfilUsuarioDTO {
     private String email;
     private String telefono;
     private Long usuarioId;
+    private String imagenUrl;
 
     // Getters y Setters
     public Integer getIdPerfil() { return idPerfil; }
@@ -34,4 +35,6 @@ public class PerfilUsuarioDTO {
     public void setTelefono(String telefono) { this.telefono = telefono; }
     public Long getUsuarioId() { return usuarioId; }
     public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+    public String getImagenUrl() { return imagenUrl; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
 }

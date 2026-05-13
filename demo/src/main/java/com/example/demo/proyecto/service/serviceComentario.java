@@ -115,13 +115,25 @@ public class serviceComentario {
 
     // Método helper para conversión
     private ComentarioDTO convertirADTO(Comentario c) {
-        return new ComentarioDTO(
+        ComentarioDTO dto = new ComentarioDTO(
                 c.getIdComentario(),
                 c.getContenido(),
                 c.getFecha() != null ? c.getFecha().toString() : "",
                 c.getPuntuacion(),
                 c.getUsuario() != null ? c.getUsuario().getId() : null,
                 c.getProductoId());
+
+        if (c.getUsuario() != null) {
+            dto.setNombreUsuario(c.getUsuario().getNombre());
+            if (c.getUsuario().getPerfilUsuario() != null) {
+                dto.setNickAutor(c.getUsuario().getPerfilUsuario().getNombrePerfil());
+                dto.setImagenAutorUrl(c.getUsuario().getPerfilUsuario().getImagenUrl());
+            } else {
+                // Fallback: Si no hay perfil, usamos el nombre de usuario
+                dto.setNickAutor(c.getUsuario().getNombre());
+            }
+        }
+        return dto;
     }
 
 }

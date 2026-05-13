@@ -175,8 +175,6 @@ public class controllerLista {
         String token = jwtService.limpiarToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
-
-        String nombreUsuario = jwtService.obtenerSubject(token);
         String rol = jwtService.obtenerRol(token);
         ListaDTO lista = service.obtenerListaDTO(id);
         if (lista == null)
@@ -200,8 +198,6 @@ public class controllerLista {
         String token = jwtService.limpiarToken(authHeader);
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
-
-        String nombreUsuario = jwtService.obtenerSubject(token);
         String rol = jwtService.obtenerRol(token);
         ListaDTO lista = service.obtenerListaDTO(id);
         if (lista == null)
@@ -279,7 +275,7 @@ public class controllerLista {
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
+      
         String rol = jwtService.obtenerRol(token);
         ListaDTO lista = service.obtenerListaDTO(id);
         if (lista == null)

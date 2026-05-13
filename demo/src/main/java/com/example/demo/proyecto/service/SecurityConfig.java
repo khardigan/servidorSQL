@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/comentarios/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/usuarios/comentarios/**").permitAll()
                         .requestMatchers("/listas/**").permitAll()
+                        .requestMatchers("/perfiles/**").authenticated()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/usuarios/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                         .anyRequest().authenticated())

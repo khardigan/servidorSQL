@@ -20,4 +20,14 @@ public class UsuarioMinimoDTO {
     public void setNick(String nick) {
         this.nick = nick;
     }
+
+    private String imagenUrl;
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
 }

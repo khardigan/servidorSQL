@@ -15,7 +15,6 @@ import com.example.demo.proyecto.repository.repositoryComentario;
 import com.example.demo.proyecto.repository.repositoryPerfilUsuario;
 import com.example.demo.proyecto.repository.repositoryListaProducto;
 
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -47,6 +46,7 @@ public class DataSeeder implements CommandLineRunner {
     private final repositoryPerfilUsuario repoPerfil;
     private final repositoryListaProducto repoListaProducto;
     private final PasswordEncoder passwordEncoder;
+    private final serviceLista sLista;
 
     public DataSeeder(repositoryUsuario repoUsuario,
             repositoryProducto repoProducto,
@@ -54,7 +54,8 @@ public class DataSeeder implements CommandLineRunner {
             repositoryComentario repoComentario,
             repositoryPerfilUsuario repoPerfil,
             repositoryListaProducto repoListaProducto,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            serviceLista sLista) {
         this.repoUsuario = repoUsuario;
         this.repoProducto = repoProducto;
         this.repoLista = repoLista;
@@ -62,6 +63,7 @@ public class DataSeeder implements CommandLineRunner {
         this.repoPerfil = repoPerfil;
         this.repoListaProducto = repoListaProducto;
         this.passwordEncoder = passwordEncoder;
+        this.sLista = sLista;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // ===================== ADMIN =====================
-        Usuario admin = repoUsuario.findByEmail("admin@gmail.com");
+        Usuario admin = repoUsuario.findByEmail("linkedList@gmail.com");
         boolean perfilAdminExiste = repoPerfil.existsByNombrePerfil("Administrador");
 
         if (admin == null && !perfilAdminExiste) {
@@ -81,20 +83,42 @@ public class DataSeeder implements CommandLineRunner {
             admin.setFechaRegistro(LocalDate.now());
             admin.setActivo(true);
 
-            PerfilUsario perfil = new PerfilUsario();
-            perfil.setUsuario(admin);
-            perfil.setNombrePerfil("Administrador");
-            perfil.setDescripcion("Usuario administrador del sistema");
+            // Solo crear perfil si el admin no tiene uno (comprobando por usuario_id)
+            if (admin.getPerfilUsuario() == null) {
+                PerfilUsario perfil = new PerfilUsario();
+                perfil.setUsuario(admin);
+                perfil.setNombrePerfil("Administrador");
+                perfil.setDescripcion("Usuario administrador del sistema");
+                perfil.setImagenUrl("https://ui-avatars.com/api/?name=Admin&background=random");
+                admin.setPerfilUsuario(perfil);
+            }
 
-            admin.setPerfilUsuario(perfil);
             admin.setListaProductosSubidos(new ArrayList<>());
             admin.setListasCreadas(new ArrayList<>());
             admin.setListasCompartidas(new ArrayList<>());
 
             admin = repoUsuario.save(admin);
             System.out.println("✔ Admin creado");
+
+            // --- Datos para Admin ---
+            Lista listaAdmin = new Lista();
+            listaAdmin.setNombre("Suministros Oficina");
+            listaAdmin.setUsuarioDueno(admin);
+            listaAdmin.setCodigo(sLista.generarCodigoAleatorio());
+            repoLista.save(listaAdmin);
+
+            Producto pAdmin = new Producto();
+            pAdmin.setNombre("Monitor 4K Profesional");
+            pAdmin.setPrecio(350.0);
+            pAdmin.setConfirmado(true);
+            pAdmin.setDescripcion("Producto importado de Amazon. Ver en: No disponible");
+            pAdmin.setCategoria("Electrónica");
+            pAdmin.setSupermercado("Amazon");
+            pAdmin.setUsuarioRegistrador(admin);
+            repoProducto.save(pAdmin);
+            System.out.println("✔ Datos iniciales para Admin creados");
+
         } else if (admin != null) {
-            // Aseguramos que el admin existente tenga el rol ADMIN
             if (!"ADMIN".equals(admin.getRol())) {
                 admin.setRol("ADMIN");
                 repoUsuario.save(admin);
@@ -102,13 +126,6 @@ public class DataSeeder implements CommandLineRunner {
             } else {
                 System.out.println("✔ Admin ya existe y tiene rol ADMIN");
             }
-        } else {
-            // Caso donde el email no existe pero el nombre de perfil sí
-            repoPerfil.findByNombrePerfil("Administrador").ifPresent(p -> {
-                String emailDueno = (p.getUsuario() != null) ? p.getUsuario().getEmail() : "desconocido";
-                System.out
-                        .println("⚠ Admin NO creado: el perfil 'Administrador' ya pertenece al usuario: " + emailDueno);
-            });
         }
 
         // ===================== USUARIO SISTEMA =====================
@@ -124,159 +141,169 @@ public class DataSeeder implements CommandLineRunner {
             listasPublicas.setFechaRegistro(LocalDate.now());
             listasPublicas.setActivo(true);
 
-            PerfilUsario perfil = new PerfilUsario();
-            perfil.setUsuario(listasPublicas);
-            perfil.setNombrePerfil("Listas Públicas");
-            perfil.setDescripcion("Cuenta del sistema");
+            // Solo crear perfil si no tiene uno
+            if (listasPublicas.getPerfilUsuario() == null) {
+                PerfilUsario perfil = new PerfilUsario();
+                perfil.setUsuario(listasPublicas);
+                perfil.setNombrePerfil("Listas Públicas");
+                perfil.setDescripcion("Cuenta del sistema");
+                perfil.setImagenUrl("https://ui-avatars.com/api/?name=Publicas&background=random");
+                listasPublicas.setPerfilUsuario(perfil);
+            }
 
-            listasPublicas.setPerfilUsuario(perfil);
             listasPublicas.setListaProductosSubidos(new ArrayList<>());
             listasPublicas.setListasCreadas(new ArrayList<>());
             listasPublicas.setListasCompartidas(new ArrayList<>());
 
             repoUsuario.save(listasPublicas);
-
             System.out.println("✔ Usuario sistema creado");
-        } else if (listasPublicas != null) {
-            System.out.println("✔ Usuario sistema ya existe (por email)");
-        } else {
-            System.out.println("⚠ Usuario sistema no creado: el perfil 'Listas Públicas' ya está en uso");
         }
 
-        // ===================== USUARIO JOSE (NORMAL) =====================
+        // ===================== USUARIO JOSE (CENTRALIZADO) =====================
         Usuario jose = repoUsuario.findByEmail("jose@example.com");
-
         if (jose == null) {
-            boolean perfilOcupado = repoPerfil.existsByNombrePerfil("Jose");
-            if (!perfilOcupado) {
-                jose = new Usuario();
-                jose.setNombre("Jose");
-                jose.setEmail("jose@example.com");
-                jose.setContraseña(passwordEncoder.encode("jose1234"));
-                jose.setRol("USER");
-                jose.setFechaRegistro(LocalDate.now());
-                jose.setActivo(true);
+            jose = new Usuario();
+            jose.setNombre("Jose");
+            jose.setEmail("jose@example.com");
+            jose.setRol("USER");
+            jose.setFechaRegistro(LocalDate.now());
+            jose.setListaProductosSubidos(new ArrayList<>());
+            jose.setListasCreadas(new ArrayList<>());
+            jose.setListasCompartidas(new ArrayList<>());
+            System.out.println("✔ Creando nuevo usuario Jose...");
+        }
+        jose.setActivo(true);
+        jose.setContraseña(passwordEncoder.encode("jose1234"));
+        jose.setVerificationToken(null);
+        jose = repoUsuario.save(jose);
 
-                PerfilUsario perfilJose = new PerfilUsario();
-                perfilJose.setUsuario(jose);
-                perfilJose.setNombrePerfil("Jose");
-                perfilJose.setEmail(jose.getEmail());
-                perfilJose.setDescripcion("Cuenta de usuario normal");
+        // Asegurar Perfil de Jose (Comprobar por el objeto jose, no por el nombre)
+        if (jose.getPerfilUsuario() == null) {
+            PerfilUsario pJ = new PerfilUsario();
+            pJ.setUsuario(jose);
+            pJ.setNombrePerfil("Jose");
+            pJ.setEmail(jose.getEmail());
+            pJ.setDescripcion("Cuenta de usuario Jose");
+            pJ.setImagenUrl("https://ui-avatars.com/api/?name=Jose&background=random");
+            jose.setPerfilUsuario(pJ);
+            repoPerfil.save(pJ);
+        }
 
-                jose.setPerfilUsuario(perfilJose);
-                jose.setListaProductosSubidos(new ArrayList<>());
-                jose.setListasCreadas(new ArrayList<>());
-                jose.setListasCompartidas(new ArrayList<>());
+        // Asegurar sus 4 listas (1 base + 3 públicas)
+        String[] misNombresListas = { "Mi Compra Semanal", "Lista de Favoritos", "Cena de Navidad",
+                "Barbacoa con Amigos" };
+        List<Lista> listasActuales = repoLista.findByUsuarioDueno(jose);
 
-                jose = repoUsuario.save(jose);
-                System.out.println("✔ Usuario Jose creado");
-
-                // Datos iniciales solo para un Jose recién creado
-                Lista listaJose = new Lista();
-                listaJose.setNombre("Mi Compra Semanal");
-                listaJose.setUsuarioDueno(jose);
-                listaJose.setCodigo(UUID.randomUUID().toString());
-                repoLista.save(listaJose);
-
-                Producto pPendiente = new Producto();
-                pPendiente.setNombre("Miel Artesanal de la Sierra");
-                pPendiente.setPrecio(6.50);
-                pPendiente.setConfirmado(false);
-                pPendiente.setCategoria("Alimentación General");
-                pPendiente.setSupermercado("Local");
-                pPendiente.setUsuarioRegistrador(jose);
-                repoProducto.save(pPendiente);
-
-                Comentario comentario = new Comentario();
-                comentario.setContenido("¡Increíble sabor! Producto super natural.");
-                comentario.setFecha(new java.sql.Date(System.currentTimeMillis()));
-                comentario.setPuntuacion(5.0);
-                comentario.setUsuario(jose);
-                comentario.setProducto(pPendiente);
-                repoComentario.save(comentario);
-
-                System.out.println("✔ Lista, producto y comentario inicial creados para Jose");
-            } else {
-                System.out.println("⚠ No se pudo crear a Jose: el nombre de perfil 'Jose' ya está en uso");
+        for (String nombreL : misNombresListas) {
+            boolean existeL = false;
+            for (Lista lExistente : listasActuales) {
+                if (nombreL.equals(lExistente.getNombre())) {
+                    existeL = true;
+                    break;
+                }
             }
-        } else {
-            System.out.println("✔ Usuario Jose ya existe");
 
-            // Si Jose ya existe, nos aseguramos de que al menos tenga su lista base
-            // Si Jose ya existe, nos aseguramos de que al menos tenga su lista base
-            boolean tieneLista = repoLista.findByUsuarioDueno(jose).stream()
-                    .anyMatch(l -> "Mi Compra Semanal".equals(l.getNombre()));
-            if (!tieneLista) {
-                Lista l = new Lista();
-                l.setNombre("Mi Compra Semanal");
-                l.setUsuarioDueno(jose);
-                l.setCodigo(UUID.randomUUID().toString());
-                repoLista.save(l);
-                System.out.println("✔ Lista base recreada para Jose");
+            if (!existeL) {
+                Lista nl = new Lista();
+                nl.setNombre(nombreL);
+                nl.setUsuarioDueno(jose);
+                nl.setCodigo(sLista.generarCodigoAleatorio());
+                nl = repoLista.save(nl);
+
+                if (!nombreL.equals("Mi Compra Semanal")) {
+                    sLista.cambiarEstadoPublicacion(nl.getCodLista(), true);
+                    System.out.println("✔ Lista pública '" + nombreL + "' creada para Jose");
+                } else {
+                    System.out.println("✔ Lista base '" + nombreL + "' creada para Jose");
+                }
             }
         }
 
-        // ===================== CARGAR EXISTENTES =====================
+        if (repoProducto.findByNombreContainingIgnoreCase("Miel Artesanal de la Sierra").isEmpty()) {
+            Producto pP = new Producto();
+            pP.setNombre("Miel Artesanal de la Sierra");
+            pP.setPrecio(6.50);
+            pP.setConfirmado(false);
+            pP.setCategoria("Alimentación General");
+            pP.setDescripcion("Producto artesanal. Ver en: No disponible");
+            pP.setSupermercado("Local");
+            pP.setUsuarioRegistrador(jose);
+            repoProducto.save(pP);
+
+            Comentario cP = new Comentario();
+            cP.setContenido("¡Increíble sabor! Producto super natural.");
+            cP.setFecha(java.sql.Date.valueOf(LocalDate.now()));
+            cP.setPuntuacion(5.0);
+            cP.setUsuario(jose);
+            cP.setProducto(pP);
+            repoComentario.save(cP);
+            System.out.println("✔ Producto inicial creado para Jose");
+        }
+
+        // ===================== CARGAR PRODUCTOS EXISTENTES =====================
         logger.info("Cargando productos existentes para evitar duplicados...");
         Set<String> productosExistentes = new HashSet<>();
         List<Object[]> datosExistentes = repoProducto.findAllNombresYSupermercados();
         for (Object[] dato : datosExistentes) {
-            String n = (String) dato[0];
-            String s = (String) dato[1];
-            productosExistentes.add((n + "|" + s).toLowerCase());
+            String nE = (String) dato[0];
+            String sE = (String) dato[1];
+            productosExistentes.add((nE + "|" + sE).toLowerCase());
         }
-        logger.info("Se han encontrado " + productosExistentes.size() + " productos ya en la base de datos.");
+        logger.info("Se han encontrado " + productosExistentes.size() + " productos en la BD.");
 
-        logger.info("Importando nuevos productos...");
+        // ===================== IMPORTAR PRODUCTOS (CSV) =====================
+        logger.info("Importando nuevos productos desde scrapeo...");
         cargarDesdeCsv("../../scrapeo/productos_dia.csv", "Dia", productosExistentes);
         cargarDesdeCsv("../../scrapeo/productos_mercadona.csv", "Mercadona", productosExistentes);
 
-        // ===================== RELLENAR LISTA DE JOSE SI ESTÁ VACÍA
-        // =====================
+        // ===================== RELLENAR TODAS LAS LISTAS DE JOSE SI ESTÁN VACÍAS =====================
         jose = repoUsuario.findByEmail("jose@example.com");
         if (jose != null) {
-            Lista listaJose = repoLista.findByUsuarioDueno(jose).stream()
-                    .filter(l -> "Mi Compra Semanal".equals(l.getNombre()))
-                    .findFirst()
-                    .orElse(null);
+            List<Lista> todasSusListas = repoLista.findByUsuarioDueno(jose);
+            List<Producto> todosLosProductos = repoProducto.findAll();
 
-            if (listaJose != null
-                    && (listaJose.getProductosEnLista() == null || listaJose.getProductosEnLista().isEmpty())) {
-                List<Producto> productosParaJose = repoProducto.findAll().stream()
-                        .filter(p -> "Dia".equals(p.getSupermercado()))
-                        .limit(10)
-                        .toList();
+            if (!todosLosProductos.isEmpty()) {
+                for (Lista lJose : todasSusListas) {
+                    // Si la lista está vacía, le metemos 10 productos
+                    if (lJose.getProductosEnLista() == null || lJose.getProductosEnLista().isEmpty()) {
+                        int productosAnadidos = 0;
+                        if (lJose.getProductosEnLista() == null)
+                            lJose.setProductosEnLista(new ArrayList<>());
 
-                if (!productosParaJose.isEmpty()) {
-                    if (listaJose.getProductosEnLista() == null)
-                        listaJose.setProductosEnLista(new ArrayList<>());
-                    for (Producto p : productosParaJose) {
-                        ListaProducto lp = new ListaProducto();
-                        lp.setLista(listaJose);
-                        lp.setProducto(p);
-                        lp.setComprado(false);
-                        lp.setCantidad(1);
-                        repoListaProducto.save(lp);
-                        listaJose.getProductosEnLista().add(lp);
+                        for (Producto p : todosLosProductos) {
+                            // Intentamos que no sean siempre los mismos usando un pequeño offset o
+                            // simplemente los primeros 10
+                            // Para barbacoa o navidad podríamos filtrar, pero por ahora metemos 10
+                            // genéricos para que no estén vacías
+                            ListaProducto lp = new ListaProducto();
+                            lp.setLista(lJose);
+                            lp.setProducto(p);
+                            lp.setComprado(false);
+                            lp.setCantidad(1);
+                            repoListaProducto.save(lp);
+                            lJose.getProductosEnLista().add(lp);
+
+                            productosAnadidos++;
+                            if (productosAnadidos >= 10)
+                                break;
+                        }
+                        repoLista.save(lJose);
+                        System.out.println("✔ Lista '" + lJose.getNombre() + "' de Jose inicializada con "
+                                + productosAnadidos + " productos.");
                     }
-                    repoLista.save(listaJose);
-                    System.out.println("✔ Lista de Jose inicializada con 10 productos.");
                 }
             }
         }
     }
 
     private void cargarDesdeCsv(String csvPath, String supermercado, Set<String> productosExistentes) {
-        // Buscar el archivo en diferentes ubicaciones posibles
         Path archivoCSV = buscarArchivo(csvPath);
-
         if (archivoCSV == null || !Files.exists(archivoCSV)) {
             logger.error("No se encontró el archivo CSV de " + supermercado + ": " + csvPath);
             return;
         }
 
         logger.info("Importando desde: " + archivoCSV.toAbsolutePath() + " (" + supermercado + ")");
-
         Map<String, Producto> mapaProductos = new java.util.HashMap<>();
         int saltados = 0;
 
@@ -284,22 +311,16 @@ public class DataSeeder implements CommandLineRunner {
                 new InputStreamReader(new FileInputStream(archivoCSV.toFile()), StandardCharsets.UTF_8))) {
             String line;
             boolean firstLine = true;
-
             while ((line = br.readLine()) != null) {
-                // Saltar la cabecera
                 if (firstLine) {
                     firstLine = false;
                     continue;
                 }
-
-                if (line.trim().isEmpty()) {
+                if (line.trim().isEmpty())
                     continue;
-                }
 
                 try {
-                    // Separar por comas que no estén dentro de comillas
                     String[] values = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-
                     if (values.length >= 5) {
                         String nombre = values[0].trim().replace("\"", "");
                         String precioCrudo = values[1].trim().replace("\"", "");
@@ -324,12 +345,10 @@ public class DataSeeder implements CommandLineRunner {
                             p.setSupermercado(supermercado);
                             p.setConfirmado(true);
                             p.setImagenUrl(imagenUrl.length() > 255 ? imagenUrl.substring(0, 255) : imagenUrl);
-
                             String urlFinal = url.isEmpty() ? "No disponible" : url;
                             String desc = "Producto importado de " + supermercado + ". Ver en: " + urlFinal;
                             p.setDescripcion(desc.length() > 300 ? desc.substring(0, 300) : desc);
 
-                            // Parsear precio
                             double precioFinal = 1.99;
                             if (!precioCrudo.isEmpty()) {
                                 String[] partesPrecio = precioCrudo.split(" ");
@@ -345,205 +364,97 @@ public class DataSeeder implements CommandLineRunner {
                             p.setPrecio(precioFinal > 0 ? precioFinal : 1.99);
                             mapaProductos.put(clave, p);
                         }
-
-                        // La categoría ahora viene limpia desde el CSV (columna 4)
-                        String catOriginal = values.length > 4 ? values[4].replace("\"", "").trim() : "General";
-
-                        String categoria = mapearCategoria(nombre, catOriginal);
+                        String categoria = mapearCategoria(nombre, categoriaCruda);
                         if (!categoria.equals("General") && !categoria.isEmpty()) {
                             categoria = categoria.substring(0, 1).toUpperCase() + categoria.substring(1);
                         }
                         p.setCategoria(categoria);
-                        if (nombre.toLowerCase().contains("entrecot")) {
-                            logger.info("DEBUG: Producto '{}' categorizado como '{}' (Origen: {})", nombre, categoria,
-                                    catOriginal);
-                        }
                     }
                 } catch (Exception e) {
-                    logger.error("Error al parsear la línea: " + line, e);
+                    logger.error("Error parseando línea: " + line);
                 }
             }
-
-            if (!mapaProductos.isEmpty()) {
+            if (!mapaProductos.isEmpty())
                 repoProducto.saveAll(mapaProductos.values());
-                logger.info("¡Se han importado " + mapaProductos.size() + " productos NUEVOS de " + supermercado + "!");
-            }
-            if (saltados > 0) {
-                logger.info("Se han saltado " + saltados + " productos que ya existían en " + supermercado);
-            }
-
+            logger.info("Importados " + mapaProductos.size() + " de " + supermercado + ". Saltados: " + saltados);
         } catch (Exception e) {
-            logger.error("Error al leer el archivo CSV de " + supermercado + ": " + e.getMessage());
+            logger.error("Error leyendo CSV: " + e.getMessage());
         }
     }
 
-    /**
-     * Busca el archivo CSV en múltiples ubicaciones posibles
-     */
     private Path buscarArchivo(String csvPath) {
         String workingDir = System.getProperty("user.dir");
         String nombreArchivo = csvPath.contains("/") ? csvPath.substring(csvPath.lastIndexOf("/") + 1) : csvPath;
-
         logger.info("Buscando archivo: " + nombreArchivo);
-        logger.info("Working dir actual: " + workingDir);
-
-        // Estrategia 1: Subir desde el working dir actual hasta encontrar la carpeta
-        // 'scrapeo'
         Path actual = Paths.get(workingDir).normalize();
-
         for (int i = 0; i < 7; i++) {
             Path candidato = actual.resolve("scrapeo").resolve(nombreArchivo);
-            logger.debug("  Intento " + (i + 1) + ": " + candidato.toAbsolutePath());
-            if (Files.exists(candidato)) {
-                logger.info("✓ Archivo encontrado en: " + candidato.toAbsolutePath());
+            if (Files.exists(candidato))
                 return candidato;
-            }
-
             Path parent = actual.getParent();
             if (parent == null)
                 break;
             actual = parent;
         }
-
-        // Estrategia 2: Intentar con la ruta original por si es una ruta absoluta
-        logger.debug("  Intento final (ruta original): " + Paths.get(csvPath).toAbsolutePath());
-        if (Files.exists(Paths.get(csvPath))) {
-            return Paths.get(csvPath);
-        }
-
-        logger.error("No se pudo encontrar el archivo después de intentar 7 niveles hacia arriba");
-        return null;
+        return Files.exists(Paths.get(csvPath)) ? Paths.get(csvPath) : null;
     }
 
     private String mapearCategoria(String nombre, String catOriginal) {
         String n = normalizar(nombre.toLowerCase());
 
-        // =========================
-        // ✅ PASO 1: Si el CSV ya nos da una categoría ALIMENTARIA limpia, confiar en
-        // ella directamente.
-        // Esto evita que los filtros de nombre reclasifiquen productos correctos.
-        // =========================
+        // PASO 1: Categoría alimentaria limpia del CSV
         if (!catOriginal.isEmpty() && !catOriginal.startsWith("http")) {
-            String catNorm = normalizar(catOriginal.toLowerCase());
-            if (contiene(catNorm, "carniceria", "pescaderia", "frutas", "verduras", "panaderia",
-                    "lacteos", "bebidas", "congelados")) {
-                return catOriginal; // La categoría del CSV es de confianza
-            }
+            String cN = normalizar(catOriginal.toLowerCase());
+            if (contiene(cN, "carniceria", "pescaderia", "frutas", "verduras", "panaderia", "lacteos", "bebidas",
+                    "congelados"))
+                return catOriginal;
         }
 
-        // =========================
-        // 🚨 PASO 2: BLOQUEOS — Solo para productos sin categoría alimentaria clara
-        // =========================
-        if (contiene(n, "limpia", "detergente", "suavizante", "lavavajillas", "lavadora", "friegasuelos",
-                "desinfectante",
-                "estropajo", "bayeta", "multiusos", "antical", "ambientador", "spray limpia", "tejidos", "insecticida",
-                "lavavajilla", "quitagrasa", "lejia")) {
+        // PASO 2: Bloqueos (Limpieza/Cuidado)
+        if (contiene(n, "limpia", "detergente", "suavizante", "lavavajillas", "lavadora", "lejia"))
             return "Limpieza y Hogar";
-        }
-
-        // ⚠️ "gel de" en vez de "gel" para no matchear "congelado/ultracongelado"
-        if (contiene(n, "laca de", "unas", "champu", "gel de", "desodorante", "colonia", "perfume", "cepillo dental",
-                "pasta de dientes", "maquillaje", "aftersun", "locion corporal", "bronceador", "leche corporal",
-                "crema solar", "crema hidratante", "protector solar", "dentifrico", "enjuague bucal",
-                "cuchilla de afeitar", "toallitas desmaq")) {
+        if (contiene(n, "champu", "gel de", "desodorante", "colonia", "perfume", "pasta de dientes"))
             return "Cuidado Personal";
-        }
 
-        // Si el CSV da una categoría legible (no URL), la respetamos
-        if (!catOriginal.isEmpty() && !catOriginal.startsWith("http")) {
-            return catOriginal;
-        }
+        // PASO 3: Detección por nombre
+        if (contiene(n, "entrecot", "ternera", "pollo", "jamon", "salchicha", "chuleta", "lomo"))
+            return "Carnicería";
+        if (contiene(n, "salmon", "atun", "merluza", "gamba", "calamar", "bacalao"))
+            return "Pescadería";
 
+        // PASO 4: Categoría por URL / Crudo
         String c = normalizar(catOriginal.toLowerCase());
-
-        // =========================
-        // 🥩 PASO 3: DETECCIÓN POR NOMBRE (Solo si no hay categoría CSV)
-        // =========================
-        if (contiene(n, "entrecot", "chuleton", "ternera", "vacuno", "angus", "chulet", "filete", "lomo", "hamburguesa",
-                "salchicha", "jamon", "pollo", "pavo", "cerdo", "iberico", "conejo", "cordero", "costilla", "picada",
-                "panceta", "bacon", "chorizo", "fuet", "salami")) {
+        if (contiene(c, "carne", "aves", "embutido"))
             return "Carnicería";
-        }
-
-        if (contiene(n, "salmon", "atun", "merluza", "bacalao", "pulpo", "gamba", "langostino", "dorada", "lubina",
-                "chipiron", "calamar", "mejillon", "almeja", "trucha", "sardina", "boqueron")) {
+        if (contiene(c, "pescado", "marisco"))
             return "Pescadería";
-        }
-
-        // =========================
-        // 🔝 PASO 4: CATEGORÍA POR URL / CSV CRUDO
-        // =========================
-        if (contiene(c, "carne", "pollo", "aves", "vacuno", "cerdo", "embutido", "charcuteria"))
-            return "Carnicería";
-
-        if (contiene(c, "pescado", "marisco", "molusco"))
-            return "Pescadería";
-
-        if (contiene(c, "fruta", "verdura", "hortaliza", "ensalada"))
+        if (contiene(c, "fruta", "verdura"))
             return "Frutas y Verduras";
-
-        if (contiene(c, "leche", "lacteo", "queso", "huevo", "yogur"))
+        if (contiene(c, "lacteo", "queso", "huevo"))
             return "Lácteos y Huevos";
-
-        if (contiene(c, "pan", "bolleria", "pasteleria", "horno"))
+        if (contiene(c, "pan", "bolleria"))
             return "Panadería";
-
-        if (contiene(c, "bebida", "agua", "bodega", "vino", "cerveza", "refresco", "zumo"))
+        if (contiene(c, "bebida", "agua", "vino"))
             return "Bebidas";
 
-        if (contiene(c, "limpieza", "hogar", "detergente"))
-            return "Limpieza y Hogar";
-
-        if (contiene(c, "perfumeria", "higiene", "cuidado", "cosmetica"))
-            return "Cuidado Personal";
-
-        if (contiene(c, "congelado"))
-            return "Congelados";
-
-        if (contiene(c, "despensa", "alimentacion", "arroz", "pasta", "legumbre", "aceite", "especia", "conserva"))
-            return "Alimentación General";
-
-        // =========================
-        // 🧠 PASO 5: APOYO FINAL (Por Nombre)
-        // =========================
-        if (contiene(n, "manzana", "platano", "pera", "naranja", "uva", "limon", "melon", "pina", "tomate", "patata"))
+        // PASO 5: Apoyo final
+        if (contiene(n, "manzana", "platano", "tomate", "patata"))
             return "Frutas y Verduras";
-
         if (contiene(n, "leche", "yogur", "queso", "huevo"))
             return "Lácteos y Huevos";
-
-        if (contiene(n, "cerveza", "vino", "refresco", "agua", "zumo"))
-            return "Bebidas";
-
-        if (contiene(n, "chocolate", "galleta", "azucar", "mermelada", "cereales", "miel", "cacao"))
+        if (contiene(n, "chocolate", "galleta", "miel"))
             return "Dulces y Snacks";
 
-        // =========================
-        // ⚠️ FALLBACK
-        // =========================
-        if (catOriginal.isEmpty() ||
-                catOriginal.startsWith("http") ||
-                catOriginal.equalsIgnoreCase("frescos")) {
-            return "General";
-        }
-
-        return catOriginal;
+        return (catOriginal.isEmpty() || catOriginal.startsWith("http")) ? "General" : catOriginal;
     }
 
-    /**
-     * Normaliza un texto: quita acentos y caracteres raros para facilitar la
-     * búsqueda
-     */
     private String normalizar(String texto) {
         if (texto == null)
             return "";
-        String normalizado = java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD);
-        return normalizado.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "").toLowerCase();
+        return java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "").toLowerCase();
     }
 
-    /**
-     * Comprueba si el texto contiene alguna de las palabras clave
-     */
     private boolean contiene(String texto, String... palabras) {
         for (String p : palabras) {
             if (texto.contains(p))
@@ -553,5 +464,3 @@ public class DataSeeder implements CommandLineRunner {
     }
 
 }
-
-// jajaja

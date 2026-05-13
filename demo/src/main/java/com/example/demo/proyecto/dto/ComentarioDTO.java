@@ -69,6 +69,8 @@ public class ComentarioDTO {
     }
 
     private String nombreUsuario;
+    private String nickAutor;
+    private String imagenAutorUrl;
 
     public String getNombreUsuario() {
         return nombreUsuario;
@@ -76,5 +78,21 @@ public class ComentarioDTO {
 
     public void setNombreUsuario(String nombreUsuario) {
         this.nombreUsuario = nombreUsuario;
+    }
+
+    public String getNickAutor() {
+        return nickAutor;
+    }
+
+    public void setNickAutor(String nickAutor) {
+        this.nickAutor = nickAutor;
+    }
+
+    public String getImagenAutorUrl() {
+        return imagenAutorUrl;
+    }
+
+    public void setImagenAutorUrl(String imagenAutorUrl) {
+        this.imagenAutorUrl = imagenAutorUrl;
     }
 }

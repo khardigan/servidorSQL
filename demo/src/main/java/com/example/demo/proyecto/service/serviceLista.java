@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import java.util.Comparator;
 
 import com.example.demo.proyecto.dto.CrearListaRequestDTO;
 import com.example.demo.proyecto.dto.ListaDTO;
@@ -38,8 +39,17 @@ public class serviceLista {
         this.repoProducto = repoProducto;
     }
 
+    // Comparadores oficiales para mantener el orden en todo el sistema
+    private static final Comparator<ProductoEstadoDTO> COMPARADOR_PRODUCTOS = Comparator
+            .comparing(ProductoEstadoDTO::getSupermercado, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+            .thenComparing(ProductoEstadoDTO::getPrecio);
+
+    private static final Comparator<ProductoPropioDTO> COMPARADOR_PROPIOS = Comparator
+            .comparing(ProductoPropioDTO::getSupermercado, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
+            .thenComparing(p -> p.getPrecioObjetivo() != null ? p.getPrecioObjetivo() : 0.0);
+
     // Crea un código de 6 letras y números al azar.
-    private String generarCodigoAleatorio() {
+    public String generarCodigoAleatorio() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();
         java.util.Random rnd = new java.util.Random();
@@ -216,6 +226,9 @@ public class serviceLista {
             nick = l.getUsuarioDueno().getPerfilUsuario().getNombrePerfil();
         }
         dto.setNombreDuenoNick(nick);
+        if (l.getUsuarioDueno() != null && l.getUsuarioDueno().getPerfilUsuario() != null) {
+            dto.setImagenDuenoUrl(l.getUsuarioDueno().getPerfilUsuario().getImagenUrl());
+        }
 
         // Usuarios compartida
         if (l.getUsuariosCompartida() != null) {
@@ -223,10 +236,15 @@ public class serviceLista {
                 UsuarioMinimoDTO uDto = new UsuarioMinimoDTO();
                 uDto.setId(u.getId());
                 String uNick = u.getNombre();
-                if (u.getPerfilUsuario() != null && u.getPerfilUsuario().getNombrePerfil() != null) {
-                    uNick = u.getPerfilUsuario().getNombrePerfil();
+                String uImg = null;
+                if (u.getPerfilUsuario() != null) {
+                    if (u.getPerfilUsuario().getNombrePerfil() != null) {
+                        uNick = u.getPerfilUsuario().getNombrePerfil();
+                    }
+                    uImg = u.getPerfilUsuario().getImagenUrl();
                 }
                 uDto.setNick(uNick);
+                uDto.setImagenUrl(uImg);
                 return uDto;
             }).toList();
             dto.setUsuariosCompartida(usuariosDto);
@@ -236,17 +254,20 @@ public class serviceLista {
 
         // Productos
         if (l.getProductosEnLista() != null) {
-            List<ProductoEstadoDTO> prodsDto = l.getProductosEnLista().stream().map(lp -> {
-                ProductoEstadoDTO pDto = new ProductoEstadoDTO();
-                Producto p = lp.getProducto();
-                pDto.setId(p.getId());
-                pDto.setNombre(p.getNombre());
-                pDto.setPrecio(p.getPrecio());
-                pDto.setCantidad(lp.getCantidad() != null ? lp.getCantidad() : 1);
-                pDto.setComprado(Boolean.TRUE.equals(lp.getComprado()));
-                pDto.setSupermercado(p.getSupermercado());
-                return pDto;
-            }).toList();
+            List<ProductoEstadoDTO> prodsDto = l.getProductosEnLista().stream()
+                    .map(lp -> {
+                        ProductoEstadoDTO pDto = new ProductoEstadoDTO();
+                        Producto p = lp.getProducto();
+                        pDto.setId(p.getId());
+                        pDto.setNombre(p.getNombre());
+                        pDto.setPrecio(p.getPrecio());
+                        pDto.setCantidad(lp.getCantidad() != null ? lp.getCantidad() : 1);
+                        pDto.setComprado(Boolean.TRUE.equals(lp.getComprado()));
+                        pDto.setSupermercado(p.getSupermercado());
+                        return pDto;
+                    })
+                    .sorted(COMPARADOR_PRODUCTOS)
+                    .toList();
             dto.setProductos(prodsDto);
         } else {
             dto.setProductos(new ArrayList<>());
@@ -256,6 +277,7 @@ public class serviceLista {
         if (l.getProductoPropios() != null) {
             List<ProductoPropioDTO> propiosDto = l.getProductoPropios().stream()
                     .map(this::convertirAProductoPropioDTO)
+                    .sorted(COMPARADOR_PROPIOS)
                     .collect(Collectors.toList());
             dto.setProductoPropios(propiosDto);
         } else {
@@ -380,10 +402,21 @@ public class serviceLista {
                                 String metaContent = nombreReal.substring(startMeta + 6, endMeta);
                                 String[] parts = metaContent.split(",");
                                 for (String p : parts) {
-                                    if (p.startsWith("id="))
-                                        dto.setUsuarioDuenoId(Long.parseLong(p.substring(3)));
-                                    if (p.startsWith("nick="))
+                                    if (p.startsWith("id=")) {
+                                        Long idAutor = Long.parseLong(p.substring(3));
+                                        dto.setUsuarioDuenoId(idAutor);
+                                        // Buscamos su perfil real para tener la foto actualizada
+                                        Usuario autor = repoUsuario.findById(idAutor).orElse(null);
+                                        if (autor != null && autor.getPerfilUsuario() != null) {
+                                            dto.setImagenDuenoUrl(autor.getPerfilUsuario().getImagenUrl());
+                                            if (autor.getPerfilUsuario().getNombrePerfil() != null) {
+                                                dto.setNombreDuenoNick(autor.getPerfilUsuario().getNombrePerfil());
+                                            }
+                                        }
+                                    }
+                                    if (p.startsWith("nick=") && dto.getNombreDuenoNick() == null) {
                                         dto.setNombreDuenoNick(p.substring(5));
+                                    }
                                 }
                                 dto.setNombre(nombreReal.substring(0, startMeta).trim());
                             }
@@ -558,6 +591,12 @@ public class serviceLista {
         if (l.getUsuarioDueno() != null) {
             dto.setUsuarioDuenoId(l.getUsuarioDueno().getId());
             dto.setNombreDueno(l.getUsuarioDueno().getNombre());
+            if (l.getUsuarioDueno().getPerfilUsuario() != null) {
+                dto.setNickDueno(l.getUsuarioDueno().getPerfilUsuario().getNombrePerfil());
+                dto.setImagenDuenoUrl(l.getUsuarioDueno().getPerfilUsuario().getImagenUrl());
+            } else {
+                dto.setNickDueno(l.getUsuarioDueno().getNombre());
+            }
         }
         dto.setNombre(l.getNombre());
         dto.setPublicada(Boolean.TRUE.equals(l.getPublicada()));

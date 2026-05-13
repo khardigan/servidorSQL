@@ -61,6 +61,16 @@ public class ListaDetalleDTO {
         this.nombreDuenoNick = nombreDuenoNick;
     }
 
+    private String imagenDuenoUrl;
+
+    public String getImagenDuenoUrl() {
+        return imagenDuenoUrl;
+    }
+
+    public void setImagenDuenoUrl(String imagenDuenoUrl) {
+        this.imagenDuenoUrl = imagenDuenoUrl;
+    }
+
     public List<UsuarioMinimoDTO> getUsuariosCompartida() {
         return usuariosCompartida;
     }

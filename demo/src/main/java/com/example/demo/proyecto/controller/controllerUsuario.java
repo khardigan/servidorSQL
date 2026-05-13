@@ -48,8 +48,7 @@ public class controllerUsuario {
     }
 
     // ----------------- LOGIN -----------------
-    // Loguea al usuario y devuelve sus datos y el token. (Tiene que recibir nombre
-    // y contraseña)
+    // Loguea al usuario y devuelve sus datos y el token. (Tiene que recibir nombre y contraseña)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String ident = request.get("nombre"); // nombre o email
@@ -75,8 +74,7 @@ public class controllerUsuario {
     }
 
     // ----------------- RENOVAR TOKEN -----------------
-    // Te da un token nuevo si el que tienes es válido. (Tiene que recibir el token
-    // actual)
+    // Te da un token nuevo si el que tienes es válido. (Tiene que recibir el token actual)
     @GetMapping("/renovar")
     public ResponseEntity<AuthResponse> obtenerNuevoJWT(@RequestHeader("Authorization") String authHeader) {
         String token = serviceJWT.limpiarToken(authHeader);

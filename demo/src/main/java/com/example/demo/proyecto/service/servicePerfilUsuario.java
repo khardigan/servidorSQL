@@ -68,6 +68,7 @@ public class servicePerfilUsuario {
         perfil.setEdad(dto.getEdad());
         perfil.setResidencia(dto.getResidencia());
         perfil.setTelefono(dto.getTelefono());
+        perfil.setImagenUrl(dto.getImagenUrl());
 
         PerfilUsario guardado = repoPerfil.save(perfil);
         return convertirADTO(guardado);
@@ -97,6 +98,8 @@ public class servicePerfilUsuario {
             perfil.setEmail(dtoRequest.getEmail());
         if (dtoRequest.getTelefono() != null)
             perfil.setTelefono(dtoRequest.getTelefono());
+        if (dtoRequest.getImagenUrl() != null)
+            perfil.setImagenUrl(dtoRequest.getImagenUrl());
 
         PerfilUsario actualizado = repoPerfil.save(perfil);
         return convertirADTO(actualizado);
@@ -125,7 +128,8 @@ public class servicePerfilUsuario {
     }
 
     // ---------------- CONVERSIÓN DTO ----------------
-    // Pasa un perfil del modelo a formato DTO.
+    // Pasa un perfil del modelo a formato DTO (sirve para pasarlo a la interfaz de
+    // usuario).
     private PerfilUsuarioDTO convertirADTO(PerfilUsario p) {
         if (p == null)
             return null;
@@ -142,6 +146,7 @@ public class servicePerfilUsuario {
                 : (p.getUsuario() != null ? p.getUsuario().getEmail() : null));
         dto.setTelefono(p.getTelefono());
         dto.setIdPerfil(p.getId()); // añadir el id Integer al DTO
+        dto.setImagenUrl(p.getImagenUrl());
         return dto;
     }
 }

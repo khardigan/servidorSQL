@@ -20,6 +20,8 @@ public class CrearPerfilRequestDTO {
     @NotNull(message = "El usuario asociado es obligatorio")
     private Long usuarioId;
 
+    private String imagenUrl;
+
     // Getters y Setters
     public String getNombrePerfil() { return nombrePerfil; }
     public void setNombrePerfil(String nombrePerfil) { this.nombrePerfil = nombrePerfil; }
@@ -39,4 +41,6 @@ public class CrearPerfilRequestDTO {
     public void setTelefono(String telefono) { this.telefono = telefono; }
     public Long getUsuarioId() { return usuarioId; }
     public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+    public String getImagenUrl() { return imagenUrl; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
 }

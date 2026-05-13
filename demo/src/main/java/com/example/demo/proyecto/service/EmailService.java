@@ -11,9 +11,11 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    public static final String EMAIL_OFICIAL = "linkedlistoficial@gmail.com";
+
     public void enviarEmailRecuperacion(String to, String token, String nombre) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("LinkedListOficial@gmail.com");
+        message.setFrom(EMAIL_OFICIAL);
         message.setTo(to);
         message.setSubject("Recuperación de Contraseña - LinkedList");
 
@@ -33,7 +35,7 @@ public class EmailService {
 
     public void enviarEmailVerificacion(String to, String token, String nombre) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("LinkedListOficial@gmail.com");
+        message.setFrom(EMAIL_OFICIAL);
         message.setTo(to);
         message.setSubject("Verificación de Cuenta - LinkedList");
 
@@ -52,8 +54,8 @@ public class EmailService {
 
     public void enviarEmailContacto(String nombre, String de, String tema, String mensajeContent) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("LinkedListOficial@gmail.com");
-        message.setTo("LinkedListOficial@gmail.com"); // Se envía al correo oficial
+        message.setFrom(EMAIL_OFICIAL);
+        message.setTo(EMAIL_OFICIAL); // Se envía al correo oficial
         message.setReplyTo(de); // Para poder responder al usuario
         message.setSubject("NUEVO MENSAJE DE CONTACTO: " + tema);
 

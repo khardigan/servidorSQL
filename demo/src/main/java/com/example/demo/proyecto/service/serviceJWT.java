@@ -15,16 +15,12 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class serviceJWT {
-
-    // Esto no recuerdo que es jaja
     private static final String SECRET = "esta_es_una_clave_super_secreta_de_ejemplo_1234567890";
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 horas
-
     // Te da la clave secreta para firmar los tokens.
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
-
     // Crea un token JWT para un usuario.
     public String generarToken(String sub, String rol, Long id) {
         Date ahora = new Date();

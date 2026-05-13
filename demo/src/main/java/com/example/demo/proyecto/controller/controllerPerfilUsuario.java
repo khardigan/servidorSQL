@@ -2,6 +2,7 @@ package com.example.demo.proyecto.controller;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -63,24 +64,24 @@ public class controllerPerfilUsuario {
             @Valid @RequestBody CrearPerfilRequestDTO perfilDTO,
             @RequestHeader("Authorization") String authHeader) {
 
-        // 1️⃣ Limpiar y validar token
+        // Limpiar y validar token
         String token = serviceJWT.limpiarToken(authHeader);
         if (token == null || !serviceJWT.esTokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Token inválido o ausente");
         }
 
-        // 2️⃣ Obtener datos del token
+        //  Obtener datos del token
         Long idToken = serviceJWT.obtenerId(token);
         String rol = serviceJWT.obtenerRol(token);
 
-        // 3️⃣ Verificar permisos: ADMIN o el propio usuario
+        //  Verificar permisos: ADMIN o el propio usuario
         if (!"ADMIN".equalsIgnoreCase(rol) && !idToken.equals(perfilDTO.getUsuarioId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("No puedes crear un perfil para otro usuario");
         }
 
-        // 4️⃣ Crear perfil usando la instancia correcta del service
+        //  Crear perfil usando la instancia correcta del service
         try {
             PerfilUsuarioDTO creado = service.guardarPerfil(perfilDTO);
             creado.setEmail(perfilDTO.getEmail());
@@ -117,8 +118,19 @@ public class controllerPerfilUsuario {
                     .body("No tienes permisos para actualizar este perfil");
         }
 
-        PerfilUsuarioDTO actualizado = service.actualizarPerfil(id, datos);
-        return ResponseEntity.ok(actualizado);
+        try {
+            PerfilUsuarioDTO actualizado = service.actualizarPerfil(id, datos);
+            if (actualizado == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Perfil no encontrado");
+            }
+            return ResponseEntity.ok(actualizado);
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("El nombre de perfil ya está en uso.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al actualizar el perfil: " + e.getMessage());
+        }
     }
 
     // Te elimina el perfil. (Tiene que recibir el ID y el Token)

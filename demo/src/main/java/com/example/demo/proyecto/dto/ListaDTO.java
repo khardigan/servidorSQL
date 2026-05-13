@@ -11,8 +11,14 @@ public class ListaDTO {
     private String nombre;
     private boolean publicada;
     private String nombreDueno;
+    private String nickDueno;
+    private String imagenDuenoUrl;
 
     // Getters y Setters
+    public String getNickDueno() { return nickDueno; }
+    public void setNickDueno(String nickDueno) { this.nickDueno = nickDueno; }
+    public String getImagenDuenoUrl() { return imagenDuenoUrl; }
+    public void setImagenDuenoUrl(String imagenDuenoUrl) { this.imagenDuenoUrl = imagenDuenoUrl; }
     public String getNombreDueno() { return nombreDueno; }
     public void setNombreDueno(String nombreDueno) { this.nombreDueno = nombreDueno; }
     public String getNombre() { return nombre; }

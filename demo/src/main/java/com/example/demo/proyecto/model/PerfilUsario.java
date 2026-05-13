@@ -29,8 +29,7 @@ public class PerfilUsario {
     @Column(name = "nombre_perfil", unique = true)
     private String nombrePerfil;
 
-    @Column(name = "descripcion", length = 200)
-    @Length(max = 200, message = "El maximo de caracteres es 200")
+    @Column(name = "descripcion", length = 5000)
     private String descripcion;
 
     @Column(name = "subtitulo")
@@ -50,6 +49,9 @@ public class PerfilUsario {
 
     @Column(name = "telefono")
     private String telefono;
+
+    @Column(name = "imagen_url", length = 5000)
+    private String imagenUrl;
 
     @OneToOne
     @JoinColumn(name = "usuario_id")
