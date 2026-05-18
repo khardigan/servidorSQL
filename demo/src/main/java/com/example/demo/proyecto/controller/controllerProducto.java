@@ -1,7 +1,6 @@
 package com.example.demo.proyecto.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -198,25 +197,6 @@ public class controllerProducto {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
 
         return ResponseEntity.noContent().build();
-    }
-
-    // --------------- Listas del producto ----------
-    // Te da las listas del producto. (Tiene que recibir el ID)
-    @GetMapping("/{id}/listas")
-    public ResponseEntity<?> obtenerListasDelProducto(@PathVariable Long id) {
-        ProductoDTO p = service.obtenerProductoDTO(id);
-        if (p == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
-        return ResponseEntity.ok(p.getListas());
-    }
-
-    // Te da el usuario del producto. (Tiene que recibir el ID)
-    @GetMapping("/{id}/usuario")
-    public ResponseEntity<?> obtenerUsuarioDelProducto(@PathVariable Long id) {
-        ProductoDTO p = service.obtenerProductoDTO(id);
-        if (p == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Producto no encontrado");
-        return ResponseEntity.ok(p.getUsuarioRegistradorId());
     }
 
     // Extrae el token del header.

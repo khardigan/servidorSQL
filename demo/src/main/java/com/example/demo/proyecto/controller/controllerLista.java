@@ -1,7 +1,6 @@
 package com.example.demo.proyecto.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +25,6 @@ import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.repository.repositoryUsuario;
 import com.example.demo.proyecto.service.serviceJWT;
 import com.example.demo.proyecto.service.serviceLista;
-import com.example.demo.proyecto.service.serviceProducto;
 
 import jakarta.validation.Valid;
 
@@ -35,14 +33,11 @@ import jakarta.validation.Valid;
 public class controllerLista {
 
     private final serviceLista service;
-    private final serviceProducto serviceProducto;
     private final repositoryUsuario repoUsuario;
     private final serviceJWT jwtService;
 
-    public controllerLista(serviceLista service, serviceProducto serviceProducto,
-            repositoryUsuario repoUsuario, serviceJWT jwtService) {
+    public controllerLista(serviceLista service, repositoryUsuario repoUsuario, serviceJWT jwtService) {
         this.service = service;
-        this.serviceProducto = serviceProducto;
         this.repoUsuario = repoUsuario;
         this.jwtService = jwtService;
     }
@@ -134,7 +129,6 @@ public class controllerLista {
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
-        String nombreUsuario = jwtService.obtenerSubject(token);
         String rol = jwtService.obtenerRol(token);
         ListaDTO lista = service.obtenerListaDTO(id);
         if (lista == null)
@@ -275,7 +269,6 @@ public class controllerLista {
         if (token == null || !jwtService.esTokenValido(token))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o ausente");
 
-      
         String rol = jwtService.obtenerRol(token);
         ListaDTO lista = service.obtenerListaDTO(id);
         if (lista == null)

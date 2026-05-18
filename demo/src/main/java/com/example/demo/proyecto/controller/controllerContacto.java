@@ -21,7 +21,7 @@ public class controllerContacto {
 
     @GetMapping("/email")
     public ResponseEntity<?> obtenerEmail() {
-        return ResponseEntity.ok(Map.of("email", EmailService.EMAIL_OFICIAL));
+        return ResponseEntity.ok(Map.of("email", emailService.getEmailOficial()));
     }
 
     @PostMapping
@@ -39,7 +39,8 @@ public class controllerContacto {
             emailService.enviarEmailContacto(nombre, correo, tema, mensaje);
             return ResponseEntity.ok(Map.of("mensaje", "Mensaje enviado correctamente"));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error al enviar el mensaje: " + e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al enviar el mensaje: " + e.getMessage()));
         }
     }
 }

@@ -1,7 +1,5 @@
 package com.example.demo.proyecto.controller;
 
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -23,7 +21,6 @@ import com.example.demo.proyecto.dto.AuthResponse;
 import com.example.demo.proyecto.dto.CrearUsuarioRequestDTO;
 import com.example.demo.proyecto.dto.PerfilUsuarioDTO;
 import com.example.demo.proyecto.dto.UsuarioDTO;
-import com.example.demo.proyecto.model.Usuario;
 import com.example.demo.proyecto.service.serviceAuthen;
 import com.example.demo.proyecto.service.serviceJWT;
 import com.example.demo.proyecto.service.servicePerfilUsuario;
@@ -48,7 +45,8 @@ public class controllerUsuario {
     }
 
     // ----------------- LOGIN -----------------
-    // Loguea al usuario y devuelve sus datos y el token. (Tiene que recibir nombre y contraseña)
+    // Loguea al usuario y devuelve sus datos y el token. (Tiene que recibir nombre
+    // y contraseña)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String ident = request.get("nombre"); // nombre o email
@@ -74,16 +72,21 @@ public class controllerUsuario {
     }
 
     // ----------------- RENOVAR TOKEN -----------------
-    // Te da un token nuevo si el que tienes es válido. (Tiene que recibir el token actual)
-    @GetMapping("/renovar")
-    public ResponseEntity<AuthResponse> obtenerNuevoJWT(@RequestHeader("Authorization") String authHeader) {
-        String token = serviceJWT.limpiarToken(authHeader);
-        String nombre = serviceJWT.obtenerSubject(token);
-        String rol = serviceJWT.obtenerRol(token);
-        Long id = serviceJWT.obtenerId(token);
-        AuthResponse nuevoToken = serviceAuthen.renovarToken(nombre, rol, id);
-        return ResponseEntity.ok(nuevoToken);
-    }
+    // Te da un token nuevo si el que tienes es válido. (Tiene que recibir el token
+    // actual), ya no hace falta porque al expirar el token lo renueva
+    // automáticamente
+    /*
+     * @GetMapping("/renovar")
+     * public ResponseEntity<AuthResponse>
+     * obtenerNuevoJWT(@RequestHeader("Authorization") String authHeader) {
+     * String token = serviceJWT.limpiarToken(authHeader);
+     * String nombre = serviceJWT.obtenerSubject(token);
+     * String rol = serviceJWT.obtenerRol(token);
+     * Long id = serviceJWT.obtenerId(token);
+     * AuthResponse nuevoToken = serviceAuthen.renovarToken(nombre, rol, id);
+     * return ResponseEntity.ok(nuevoToken);
+     * }
+     */
 
     // ----------------- LISTAR USUARIOS -----------------
     // Devuelve la lista de todos los usuarios.
@@ -237,23 +240,27 @@ public class controllerUsuario {
 
     // ----------------- ELIMINAR TODOS LOS USUARIOS -----------------
     // Borra a todos los usuarios de la base de datos. (Tiene que recibir el Token)
-    @DeleteMapping("/eliminartodos")
-    public ResponseEntity<?> eliminarTodos(@RequestHeader("Authorization") String authHeader) {
-        String token = serviceJWT.limpiarToken(authHeader);
-
-        if (token == null || !serviceJWT.esTokenValido(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Token inválido o ausente");
-        }
-
-        String rol = serviceJWT.obtenerRol(token);
-        if (!"ADMIN".equalsIgnoreCase(rol)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo admin puede eliminar usuarios");
-        }
-
-        serviceAuthen.eliminarTodosLosUsuarios();
-        return ResponseEntity.noContent().build();
-    }
+    /*
+     * @DeleteMapping("/eliminartodos")
+     * public ResponseEntity<?> eliminarTodos(@RequestHeader("Authorization") String
+     * authHeader) {
+     * String token = serviceJWT.limpiarToken(authHeader);
+     * 
+     * if (token == null || !serviceJWT.esTokenValido(token)) {
+     * return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+     * .body("Token inválido o ausente");
+     * }
+     * 
+     * String rol = serviceJWT.obtenerRol(token);
+     * if (!"ADMIN".equalsIgnoreCase(rol)) {
+     * return ResponseEntity.status(HttpStatus.FORBIDDEN).
+     * body("Solo admin puede eliminar usuarios");
+     * }
+     * 
+     * serviceAuthen.eliminarTodosLosUsuarios();
+     * return ResponseEntity.noContent().build();
+     * }
+     */
 
     // ----------------- PRODUCTOS DEL USUARIO -----------------
     // Te da los productos que ha subido un usuario. (Tiene que recibir el ID)
@@ -263,15 +270,6 @@ public class controllerUsuario {
         if (u == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         return ResponseEntity.ok(serviceAuthen.obtenerProductosSubidosPorUsuario(id));
-    }
-
-    // Te da las listas que ha creado un usuario. (Tiene que recibir el ID)
-    @GetMapping("/{id}/listas")
-    public ResponseEntity<?> obtenerListasDelUsuario(@PathVariable Long id) {
-        UsuarioDTO u = serviceAuthen.obtenerUsuarioDTO(id);
-        if (u == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
-        return ResponseEntity.ok(serviceAuthen.obtenerListasSubidosPorUsuario(id));
     }
 
     // ----------------- RECUPERAR CONTRASEÑA -----------------

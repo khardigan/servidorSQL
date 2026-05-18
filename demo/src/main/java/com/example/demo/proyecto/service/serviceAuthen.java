@@ -307,26 +307,28 @@ public class serviceAuthen {
         return true;
     }
 
-    @Transactional
-    public Boolean eliminarTodosLosUsuarios() {
-        List<Usuario> usuarios = repoUsuario.findAll();
-        if (usuarios.isEmpty()) {
-            throw new RuntimeException("No hay usuarios para eliminar");
-        }
-
-        // Limpiar todas las colaboraciones en listas compartidas para todos los
-        // usuarios
-        List<Lista> todasLasListas = repoLista.findAll();
-        for (Lista lista : todasLasListas) {
-            if (lista.getUsuariosCompartida() != null) {
-                lista.getUsuariosCompartida().clear();
-                repoLista.save(lista);
-            }
-        }
-
-        repoUsuario.deleteAll(usuarios);
-        return true;
-    }
+    /*
+     * @Transactional
+     * public Boolean eliminarTodosLosUsuarios() {
+     * List<Usuario> usuarios = repoUsuario.findAll();
+     * if (usuarios.isEmpty()) {
+     * throw new RuntimeException("No hay usuarios para eliminar");
+     * }
+     * 
+     * // Limpiar todas las colaboraciones en listas compartidas para todos los
+     * // usuarios
+     * List<Lista> todasLasListas = repoLista.findAll();
+     * for (Lista lista : todasLasListas) {
+     * if (lista.getUsuariosCompartida() != null) {
+     * lista.getUsuariosCompartida().clear();
+     * repoLista.save(lista);
+     * }
+     * }
+     * 
+     * repoUsuario.deleteAll(usuarios);
+     * return true;
+     * }
+     */
 
     // ===================== JWT CENTRALIZADO =====================
     // esta funcion hace : recibe el usuario y construye el response que contiene el
@@ -386,14 +388,6 @@ public class serviceAuthen {
         Usuario u1 = repoUsuario.findByEmail(ident);
         Usuario u2 = repoUsuario.findByNombreIgnoreCase(ident);
         return u1 != null || u2 != null;
-    }
-
-    public Object obtenerListasSubidosPorUsuario(Long id) {
-        Usuario usuario = repoUsuario.findById(id).orElse(null);
-        if (usuario == null) {
-            throw new RuntimeException("Usuario no encontrado");
-        }
-        return usuario.getListasCreadas();
     }
 
     public boolean resetearPassword(String token, String password) {

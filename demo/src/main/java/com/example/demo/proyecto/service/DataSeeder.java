@@ -71,13 +71,13 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         // ===================== ADMIN =====================
-        Usuario admin = repoUsuario.findByEmail("linkedList@gmail.com");
+        Usuario admin = repoUsuario.findByEmail("linkedlistoficial@gmail.com");
         boolean perfilAdminExiste = repoPerfil.existsByNombrePerfil("Administrador");
 
         if (admin == null && !perfilAdminExiste) {
             admin = new Usuario();
             admin.setNombre("admin");
-            admin.setEmail("admin@gmail.com");
+            admin.setEmail("linkedlistoficial@gmail.com");
             admin.setContraseña(passwordEncoder.encode("admin123"));
             admin.setRol("ADMIN");
             admin.setFechaRegistro(LocalDate.now());
@@ -226,7 +226,7 @@ public class DataSeeder implements CommandLineRunner {
             pP.setConfirmado(false);
             pP.setCategoria("Alimentación General");
             pP.setDescripcion("Producto artesanal. Ver en: No disponible");
-            pP.setSupermercado("Local");
+            pP.setSupermercado("Mercado Libre");
             pP.setUsuarioRegistrador(jose);
             repoProducto.save(pP);
 
@@ -256,7 +256,8 @@ public class DataSeeder implements CommandLineRunner {
         cargarDesdeCsv("../../scrapeo/productos_dia.csv", "Dia", productosExistentes);
         cargarDesdeCsv("../../scrapeo/productos_mercadona.csv", "Mercadona", productosExistentes);
 
-        // ===================== RELLENAR TODAS LAS LISTAS DE JOSE SI ESTÁN VACÍAS =====================
+        // ===================== RELLENAR TODAS LAS LISTAS DE JOSE SI ESTÁN VACÍAS
+        // =====================
         jose = repoUsuario.findByEmail("jose@example.com");
         if (jose != null) {
             List<Lista> todasSusListas = repoLista.findByUsuarioDueno(jose);

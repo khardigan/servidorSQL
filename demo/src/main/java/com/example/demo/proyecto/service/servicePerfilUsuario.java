@@ -82,23 +82,23 @@ public class servicePerfilUsuario {
         if (perfil == null)
             return null;
 
-        if (dtoRequest.getDescripcion() != null)
+        if (dtoRequest.getDescripcion() != null && !dtoRequest.getDescripcion().isBlank())
             perfil.setDescripcion(dtoRequest.getDescripcion());
-        if (dtoRequest.getNombrePerfil() != null)
+        if (dtoRequest.getNombrePerfil() != null && !dtoRequest.getNombrePerfil().isBlank())
             perfil.setNombrePerfil(dtoRequest.getNombrePerfil());
-        if (dtoRequest.getSubtitulo() != null)
+        if (dtoRequest.getSubtitulo() != null && !dtoRequest.getSubtitulo().isBlank())
             perfil.setSubtitulo(dtoRequest.getSubtitulo());
-        if (dtoRequest.getFechaNacimiento() != null)
+        if (dtoRequest.getFechaNacimiento() != null && !dtoRequest.getFechaNacimiento().isBlank())
             perfil.setFechaNacimiento(dtoRequest.getFechaNacimiento());
-        if (dtoRequest.getEdad() != null)
+        if (dtoRequest.getEdad() != null && !dtoRequest.getEdad().isBlank())
             perfil.setEdad(dtoRequest.getEdad());
-        if (dtoRequest.getResidencia() != null)
+        if (dtoRequest.getResidencia() != null && !dtoRequest.getResidencia().isBlank())
             perfil.setResidencia(dtoRequest.getResidencia());
-        if (dtoRequest.getEmail() != null)
+        if (dtoRequest.getEmail() != null && !dtoRequest.getEmail().isBlank())
             perfil.setEmail(dtoRequest.getEmail());
-        if (dtoRequest.getTelefono() != null)
+        if (dtoRequest.getTelefono() != null && !dtoRequest.getTelefono().isBlank())
             perfil.setTelefono(dtoRequest.getTelefono());
-        if (dtoRequest.getImagenUrl() != null)
+        if (dtoRequest.getImagenUrl() != null && !dtoRequest.getImagenUrl().isBlank())
             perfil.setImagenUrl(dtoRequest.getImagenUrl());
 
         PerfilUsario actualizado = repoPerfil.save(perfil);

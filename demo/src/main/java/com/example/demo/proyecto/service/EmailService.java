@@ -1,6 +1,7 @@
 package com.example.demo.proyecto.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -11,11 +12,16 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public static final String EMAIL_OFICIAL = "linkedlistoficial@gmail.com";
+    @Value("${spring.mail.username}")
+    private String emailOficial;
+
+    public String getEmailOficial() {
+        return emailOficial;
+    }
 
     public void enviarEmailRecuperacion(String to, String token, String nombre) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(EMAIL_OFICIAL);
+        message.setFrom(emailOficial);
         message.setTo(to);
         message.setSubject("Recuperación de Contraseña - LinkedList");
 
@@ -35,7 +41,7 @@ public class EmailService {
 
     public void enviarEmailVerificacion(String to, String token, String nombre) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(EMAIL_OFICIAL);
+        message.setFrom(emailOficial);
         message.setTo(to);
         message.setSubject("Verificación de Cuenta - LinkedList");
 
@@ -54,8 +60,8 @@ public class EmailService {
 
     public void enviarEmailContacto(String nombre, String de, String tema, String mensajeContent) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(EMAIL_OFICIAL);
-        message.setTo(EMAIL_OFICIAL); // Se envía al correo oficial
+        message.setFrom(emailOficial);
+        message.setTo(emailOficial); // Se envía al correo oficial
         message.setReplyTo(de); // Para poder responder al usuario
         message.setSubject("NUEVO MENSAJE DE CONTACTO: " + tema);
 

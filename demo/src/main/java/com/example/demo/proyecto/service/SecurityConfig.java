@@ -39,7 +39,7 @@ public class SecurityConfig {
                                 "/usuarios/recuperar", "/usuarios/reset-password")
                         .permitAll()
                         .requestMatchers("/productos", "/productos/buscar", "/productos/categorias",
-                                "/productos/supermercados", "/productos/pending")
+                                "/productos/supermercados", "/productos/pending", "/contacto/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/comentarios/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/usuarios/comentarios/**").permitAll()
